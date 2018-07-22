@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">ClickDots</string>
-    <string name="edit_message">Enter a Message</string>
-    <string name="button_send">Send</string>
+
+    <!-- menu screen strings -->
+    <string name="menu_title">Click the Dots</string>
+    <string name="menu_random_image">RANDOM IMAGE</string>
+    <string name="menu_choose_image">CHOOSE AN IMAGE</string>
+    <string name="menu_local_image">USE A LOCAL IMAGE</string>
+
 </resources>

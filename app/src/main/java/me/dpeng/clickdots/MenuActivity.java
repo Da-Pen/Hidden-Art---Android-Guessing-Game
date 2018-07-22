@@ -2,6 +2,7 @@ package me.dpeng.clickdots;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -10,6 +11,8 @@ import android.widget.EditText;
 public class MenuActivity extends AppCompatActivity {
 
     public static final String EXTRA_MESSAGE = "me.dpeng.clickdots.MESSAGE";
+    // string used as extra name corresponding to game image location used in intent to start game
+    public static final String IMAGE = "me.dpeng.clickdots.IMAGE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,11 +20,22 @@ public class MenuActivity extends AppCompatActivity {
         setContentView(R.layout.activity_menu);
     }
 
+    public void randomImage(View view) {
+        startGame("@drawable/lion.jpg");
+    }
+
+    public void startGame(String imageLocation) {
+        Intent intent = new Intent (this, GameActivity.class);
+        intent.putExtra(IMAGE, R.drawable.lion);
+        startActivity(intent);
+
+    }
+
     public void sendMessage(View view) {
         Intent intent = new Intent(this, GameActivity.class);
-        EditText editText = (EditText) findViewById(R.id.editText);
-        String message = editText.getText().toString();
-        intent.putExtra(EXTRA_MESSAGE, message);
+        //EditText editText = (EditText) findViewById(R.id.editText);
+        //String message = editText.getText().toString();
+        //intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
     }
 
