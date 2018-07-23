@@ -21,11 +21,16 @@ public class Dot {
         this.color = color;
     }
 
-    public void draw(Canvas canvas, Paint paint) {
+    public void draw(Canvas canvas, Paint paint, boolean squareMode) {
 
         paint.setColor(this.color);
-        canvas.drawCircle(x + diameter/2, y + diameter/2, diameter/2, paint);
-        //canvas.drawRect(x, y, x + diameter, y + diameter, paint);
+
+        if(squareMode) {
+            canvas.drawRect(x, y, x + diameter, y + diameter, paint);
+        } else {
+            canvas.drawCircle(x + diameter / 2, y + diameter / 2, diameter / 2, paint);
+        }
+
     }
 
     public int getX() {
@@ -58,5 +63,16 @@ public class Dot {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    /**
+     * Returns true if position x, y is within the bounding box of this Dot, and false otherwise
+     * @param touchX
+     * @param touchY
+     * @return
+     */
+    public boolean inside(float touchX, float touchY) {
+        return touchX > x && touchX < x + diameter &&
+                touchY > y && touchY < y + diameter;
     }
 }

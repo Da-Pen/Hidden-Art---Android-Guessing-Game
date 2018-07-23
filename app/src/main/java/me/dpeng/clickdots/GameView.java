@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.ListIterator;
 
 /**
  * Created by Daniel Peng on 7/22/2018.
@@ -23,17 +24,30 @@ import java.util.Iterator;
 
 public class GameView extends View {
 
-    public final static int RESOLUTION_RATIO = 8;
-    public final static int MIN_DIAMETER = 20; //minimum diameter for a dot (in pixels)
+    // since the source image is too large to calculate the average color of, we instead load
+    // a compressed version of it (1/RESOLUTION_RATIO of the size) and use that to do calculations
+    public final static int RESOLUTION_RATIO = 10;
+    // minimum diameter for a dot (in pixels). Once the dots are about to become smaller than this,
+    // clicking on the dots does nothing.
+    public final static int MIN_DIAMETER = 10;
 
-
+    // in square mode, squares are displayed instead of circles
+    private boolean squareMode = false;
+    // whether or not the user has revealed the source image
     private boolean revealed = false;
+    // a bitmap of the source image that has dimensions equal to the screen width (i.e width x width)
     private Bitmap screenSizeBmp;
+    // the source image except scaled down to 1/RESOLUTION_RATIOth the size of screenSizeBmp. This
+    // is used to calculate average colors.
     private Bitmap srcBmp;
-    private Bitmap gameBmp;
     private Paint paint = new Paint();
-    private int gameHeight; //height of main game view, in px
-    private int resWidth; // resWidth = screenWidth / RESOULTION_RATIO
+    // height of this view, in px
+    private int gameHeight;
+
+    private float lastTouchX = -1;
+    private float lastTouchY = -1;
+
+    // list of all the dots
     ArrayList<Dot> dots;
 
     public GameView(Context context) {
@@ -71,17 +85,9 @@ public class GameView extends View {
         });
 
 
-        resWidth = gameHeight / RESOLUTION_RATIO;
-
-
-        gameBmp = Bitmap.createBitmap(gameHeight, gameHeight, Bitmap.Config.ARGB_8888);
         paint.setStyle(Paint.Style.FILL);
 
-        // create the first dot
-        dots = new ArrayList<Dot>();
-        int avgColor = getAvgColor(0, 0, gameHeight, gameHeight);
-        // add first dot
-        dots.add(new Dot(0, 0, gameHeight, avgColor));
+        resetGame();
 
 
     }
@@ -92,45 +98,19 @@ public class GameView extends View {
         float touchY = event.getY();
         switch(event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                // if the user selected a point outside of the canvas then ignore it
-                if(touchY < 0 || touchY > gameHeight) {
-                    break;
-                }
-
-                Iterator<Dot> it = dots.iterator();
-                while(it.hasNext()) {
-                    Dot dot = it.next();
-                    // if the user pressed in that dot's bounding square
-                    if(touchX > dot.getX() && touchX < dot.getX() + dot.getDiameter() &&
-                            touchY > dot.getY() && touchY < dot.getY() + dot.getDiameter()) {
-                        if(dot.getDiameter() > MIN_DIAMETER) {
-                            // SPLIT THE DOT INTO FOUR DOTS
-                            // Top left dot
-                            int rad = (int) Math.round(((float) dot.getDiameter()) / 2.0);
-                            int c = getAvgColor(dot.getX(), dot.getY(), dot.getX() + rad, dot.getY() + rad);
-                            dots.add(new Dot(dot.getX(), dot.getY(), rad, c));
-                            // Top right dot
-                            c = getAvgColor(dot.getX() + rad, dot.getY(), dot.getX() + dot.getDiameter(), dot.getY() + rad);
-                            dots.add(new Dot(dot.getX() + rad, dot.getY(), rad, c));
-                            // Bottom left dot
-                            c = getAvgColor(dot.getX(), dot.getY() + rad, dot.getX() + rad, dot.getY() + dot.getDiameter());
-                            dots.add(new Dot(dot.getX(), dot.getY() + rad, rad, c));
-                            // Bottom right dot
-                            c = getAvgColor(dot.getX() + rad, dot.getY() + rad, dot.getX() + dot.getDiameter(), dot.getY() + dot.getDiameter());
-                            dots.add(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c));
-                            dots.remove(dot);
-                            break;
-                        }
-                    }
-                }
-
-
+                splitSelected(touchX, touchY, false);
                 break;
             case MotionEvent.ACTION_MOVE:
+                splitSelected(touchX, touchY, true);
                 break;
             case MotionEvent.ACTION_UP:
+                lastTouchX = -1;
+                lastTouchY = -1;
                 break;
         }
+        lastTouchX = touchX;
+        lastTouchY = touchY;
+
         invalidate();
         return true;
     }
@@ -139,11 +119,13 @@ public class GameView extends View {
     protected void onDraw(Canvas canvas) {
         if(!revealed) {
             for (Dot d : dots) {
-                d.draw(canvas, paint);
+                d.draw(canvas, paint, squareMode);
             }
         } else {
             canvas.drawBitmap(screenSizeBmp, 0, 0, null);
         }
+
+
 
     }
 
@@ -166,12 +148,7 @@ public class GameView extends View {
         int totalPixels = (endY - startY)*(endX - startX);
 
 
-        int totalDots = totalPixels / (RESOLUTION_RATIO*RESOLUTION_RATIO);
-
-        if(totalDots == 0) {
-            return -1;
-        }
-
+        int totalDots = 0;
         startX /= RESOLUTION_RATIO;
         startY /= RESOLUTION_RATIO;
         endX /= RESOLUTION_RATIO;
@@ -181,6 +158,7 @@ public class GameView extends View {
         int sumB = 0;
         for(int x = startX; x < endX; ++x) {
             for(int y = startY; y < endY; ++y) {
+                totalDots++;
                 int pix = srcBmp.getPixel(x, y);
                 sumR += Color.red(pix);
                 sumG += Color.green(pix);
@@ -188,9 +166,80 @@ public class GameView extends View {
             }
         }
 
-
+        if(totalDots == 0) {
+            return -1;
+        }
 
         return Color.rgb(Math.min(sumR/totalDots, 255), Math.min(sumG/totalDots, 255), Math.min(sumB/totalDots, 255));
+    }
+
+    // index is not used for now but may be used later
+    private void splitDot(Dot dot, int index) {
+        if(dot.getDiameter() / 2 > MIN_DIAMETER) {
+            // REMOVE THE OLD DOT
+            dots.remove(index);
+            // SPLIT THE DOT INTO FOUR DOTS
+            // Top left dot
+            int rad = (int) Math.round(((float) dot.getDiameter()) / 2.0);
+            int c = getAvgColor(dot.getX(), dot.getY(), dot.getX() + rad, dot.getY() + rad);
+            dots.add(new Dot(dot.getX(), dot.getY(), rad, c));
+
+            // Top right dot
+            c = getAvgColor(dot.getX() + rad, dot.getY(), dot.getX() + dot.getDiameter(), dot.getY() + rad);
+            dots.add(new Dot(dot.getX() + rad, dot.getY(), rad, c));
+            // Bottom left dot
+            c = getAvgColor(dot.getX(), dot.getY() + rad, dot.getX() + rad, dot.getY() + dot.getDiameter());
+            dots.add(new Dot(dot.getX(), dot.getY() + rad, rad, c));
+            // Bottom right dot
+            c = getAvgColor(dot.getX() + rad, dot.getY() + rad, dot.getX() + dot.getDiameter(), dot.getY() + dot.getDiameter());
+            dots.add(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c));
+        }
+    }
+
+    private void splitSelected(float touchX, float touchY, boolean moving) {
+
+        int len = dots.size();
+        for(int i = 0; i < len; ++i) {
+            Dot dot = dots.get(i);
+            // if the user pressed in that dot's bounding square
+            if(dot.inside(touchX, touchY)) {
+                if(moving) {
+                    // if the user did not "move into" this Dot (i.e their finger was already
+                    // on the Dot) then do not split it.
+                    if(dot.inside(lastTouchX, lastTouchY)) {
+                        return;
+                    }
+                }
+                splitDot(dot, i);
+                break;
+            }
+        }
+    }
+
+    public void splitAll() {
+        int i = 0;
+        while(i < dots.size()) {
+            while (dots.get(i).getDiameter() / 2 > MIN_DIAMETER) { //while splittable
+                splitDot(dots.get(i), i);
+            }
+            i++;
+        }
+        invalidate();
+    }
+
+    public void revealOrHideSourceImage() {
+        revealed = !revealed;
+        invalidate();
+    }
+
+    public void resetGame() {
+        paint.setColor(getResources().getColor(R.color.game_background));
+        dots = new ArrayList<>();
+        int avgColor = getAvgColor(0, 0, gameHeight, gameHeight);
+        // add first dot
+        dots.add(new Dot(0, 0, gameHeight, avgColor));
+        invalidate();
+
     }
 
 }

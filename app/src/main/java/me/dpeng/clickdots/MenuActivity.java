@@ -21,7 +21,7 @@ public class MenuActivity extends AppCompatActivity {
     }
 
     public void randomImage(View view) {
-        startGame(R.drawable.panda);
+        startGame(R.drawable.lion);
     }
 
     public void startGame(int imageId) {
