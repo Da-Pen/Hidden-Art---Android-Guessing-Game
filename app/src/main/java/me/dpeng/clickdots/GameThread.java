@@ -9,34 +9,34 @@ import android.graphics.Canvas;
 
 public class GameThread extends Thread{
 
-    private GameView view;
-    private boolean running = false;
-
-    public GameThread(GameView view) {
-        this.view = view;
-    }
-
-    public void setRunning(boolean running) {
-        this.running = running;
-    }
-
-    @SuppressLint("WrongCall")
-    @Override
-    public void run() {
-        while(running) {
-            Canvas c = null;
-            try {
-                c = view.getHolder().lockCanvas();
-                if(c != null) {
-                    synchronized (view.getHolder()) {
-                        view.onDraw(c);
-                    }
-                }
-            } finally {
-                if(c != null) {
-                    view.getHolder().unlockCanvasAndPost(c);
-                }
-            }
-        }
-    }
+//    private GameView view;
+//    private boolean running = false;
+//
+//    public GameThread(GameView view) {
+//        this.view = view;
+//    }
+//
+//    public void setRunning(boolean running) {
+//        this.running = running;
+//    }
+//
+//    @SuppressLint("WrongCall")
+//    @Override
+//    public void run() {
+//        while(running) {
+//            Canvas c = null;
+//            try {
+//                c = view.getHolder().lockCanvas();
+//                if(c != null) {
+//                    synchronized (view.getHolder()) {
+//                        view.onDraw(c);
+//                    }
+//                }
+//            } finally {
+//                if(c != null) {
+//                    view.getHolder().unlockCanvasAndPost(c);
+//                }
+//            }
+//        }
+//    }
 }

@@ -3,5 +3,6 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="menu_text_color">#666666</color>
+    <color name="menu_text_color">#777</color>
+    <color name="game_background">#FFF</color>
 </resources>

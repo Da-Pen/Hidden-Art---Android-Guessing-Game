@@ -21,12 +21,12 @@ public class MenuActivity extends AppCompatActivity {
     }
 
     public void randomImage(View view) {
-        startGame("@drawable/lion.jpg");
+        startGame(R.drawable.panda);
     }
 
-    public void startGame(String imageLocation) {
+    public void startGame(int imageId) {
         Intent intent = new Intent (this, GameActivity.class);
-        intent.putExtra(IMAGE, R.drawable.lion);
+        intent.putExtra(IMAGE, imageId);
         startActivity(intent);
 
     }
