@@ -13,6 +13,8 @@ import android.widget.Button;
 
 public class GameActivity extends AppCompatActivity {
 
+    final private static int SIDE_MARGIN = 16;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,7 +32,26 @@ public class GameActivity extends AppCompatActivity {
         gameView.setId(View.generateViewId());
         layout.addView(gameView);
 
+        // "back" button
+        final Button btn_back = new Button(this);
+        btn_back.setText("BACK (change to image)");
+        btn_back.setId(View.generateViewId());
+        btn_back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Thread backThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Intent intent = new Intent(GameActivity.this, MenuActivity.class);
+                        startActivity(intent);
+                    }
+                });
+                backThread.start();
 
+            }
+        });
+        layout.addView(btn_back);
+        
         // "click all" button
         final Button btn_clickAll = new Button(this);
         btn_clickAll.setText(R.string.btn_clickAll);
@@ -68,8 +89,6 @@ public class GameActivity extends AppCompatActivity {
                 if(btn_revealImage.getText().equals(getResources().getString(R.string.btn_revealImage))) {
                     btn_revealImage.setText(R.string.btn_hideImage);
                 } else {
-                    System.out.println(btn_revealImage.getText());
-                    System.out.println(R.string.btn_revealImage);
                     btn_revealImage.setText(R.string.btn_revealImage);
                 }
 
@@ -77,25 +96,32 @@ public class GameActivity extends AppCompatActivity {
         });
         layout.addView(btn_revealImage);
 
-
-
-
         ConstraintSet c = new ConstraintSet();
+
         c.clone(layout);
         //center game view on screen
         c.connect(gameView.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP);
         c.connect(gameView.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM);
+        c.connect(gameView.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT);
+        c.connect(gameView.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT);
 
-        //constrain buttons
-        c.connect(btn_clickAll.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT, 16);
-        c.connect(btn_clickAll.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM, 50);
+        //constrain back button to top-left
+        c.connect(btn_back.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP);
+        c.connect(btn_back.getId(), ConstraintSet.BOTTOM, gameView.getId(), ConstraintSet.TOP);
+        c.connect(btn_back.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT, SIDE_MARGIN);
 
-        c.connect(btn_revealImage.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT, 16);
-        c.connect(btn_revealImage.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM, 50);
+        //constrain reveal button to top-right
+        c.connect(btn_revealImage.getId(), ConstraintSet.BOTTOM, btn_back.getId(), ConstraintSet.BOTTOM);
+        c.connect(btn_revealImage.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT, SIDE_MARGIN);
 
+        //constrain back button to bottom-left
+        c.connect(btn_clickAll.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM);
+        c.connect(btn_clickAll.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM);
+        c.connect(btn_clickAll.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT, SIDE_MARGIN);
+
+        //constrain back button to bottom-right
         c.connect(btn_reset.getId(), ConstraintSet.BOTTOM, btn_clickAll.getId(), ConstraintSet.BOTTOM);
-        c.connect(btn_reset.getId(), ConstraintSet.LEFT, btn_clickAll.getId(), ConstraintSet.RIGHT);
-        c.connect(btn_reset.getId(), ConstraintSet.RIGHT, btn_revealImage.getId(), ConstraintSet.LEFT);
+        c.connect(btn_reset.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT, SIDE_MARGIN);
 
         c.applyTo(layout);
         

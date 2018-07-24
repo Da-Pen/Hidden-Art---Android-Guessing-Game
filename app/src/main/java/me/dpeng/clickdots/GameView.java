@@ -60,27 +60,26 @@ public class GameView extends View {
 
     public GameView(Context context, ConstraintLayout constraintLayout, Bitmap srcBmp) {
         this(context);
-        int width = Resources.getSystem().getDisplayMetrics().widthPixels;
-        this.srcBmp = Bitmap.createScaledBitmap(srcBmp, width / RESOLUTION_RATIO, width / RESOLUTION_RATIO, false);
-        this.screenSizeBmp = Bitmap.createScaledBitmap(srcBmp, width, width, false);
-        init(constraintLayout);
+        init(constraintLayout, srcBmp);
     }
 
 
-    private void init(ConstraintLayout constraintLayout) {
+    private void init(ConstraintLayout constraintLayout, Bitmap srcBmp) {
         // get screen dimensions
         DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
         gameHeight = dm.widthPixels;
 
-        // Set the height of this View to be equal to its width
-        final GameView thisView = this;
+        // scale bitmaps
+        this.srcBmp = Bitmap.createScaledBitmap(srcBmp, gameHeight / RESOLUTION_RATIO, gameHeight / RESOLUTION_RATIO, false);
+        this.screenSizeBmp = Bitmap.createScaledBitmap(srcBmp, gameHeight, gameHeight, false);
+
         this.post(new Runnable() {
             @Override
             public void run() {
-                ViewGroup.LayoutParams mParams = thisView.getLayoutParams();
-                mParams.height = thisView.getWidth();
-                thisView.setLayoutParams(mParams);
-                thisView.postInvalidate();
+                ViewGroup.LayoutParams mParams = GameView.this.getLayoutParams();
+                mParams.height = GameView.this.getWidth();
+                GameView.this.setLayoutParams(mParams);
+                GameView.this.postInvalidate();
             }
         });
 
