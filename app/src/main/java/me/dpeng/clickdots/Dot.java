@@ -2,13 +2,14 @@ package me.dpeng.clickdots;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.support.annotation.NonNull;
 
 /**
  * Created by Daniel Peng on 7/22/2018.
  *
  */
 
-public class Dot {
+public class Dot implements Comparable<Dot>{
     private int x;
     private int y;
     private int diameter;
@@ -74,5 +75,17 @@ public class Dot {
     public boolean inside(float touchX, float touchY) {
         return touchX > x && touchX < x + diameter &&
                 touchY > y && touchY < y + diameter;
+    }
+
+    // sorts based on y position. If they are the same, sorts based on x position.
+    @Override
+    public int compareTo(@NonNull Dot o) {
+        if(this.y > o.getY()) {
+            return 1;
+        } else if (this.y < o.getY()) {
+            return -1;
+        } else {
+            return this.x > o.getX() ? 1 : (this.x < o.getX() ? -1 : 0);
+        }
     }
 }

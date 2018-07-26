@@ -7,8 +7,8 @@
     <string name="menu_choose_image">CHOOSE AN IMAGE</string>
     <string name="menu_local_image">USE A LOCAL IMAGE</string>
     <string name="btn_clickAll">CLICK ALL</string>
-    <string name="btn_revealImage">SHOW SOURCE IMAGE</string>
-    <string name="btn_hideImage">HIDE SOURCE IMAGE</string>
+    <string name="btn_revealImage">SHOW SRC</string>
+    <string name="btn_hideImage">HIDE SRC</string>
     <string name="btn_reset">RESET</string>
 
 </resources>
