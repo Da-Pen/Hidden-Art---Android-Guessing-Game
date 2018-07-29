@@ -45,21 +45,6 @@ public class GameView extends View {
 
     private GameActivity gameActivity;
 
-    // TOUCH VARIABLES
-    private float lastTouchX = -1;
-    private float lastTouchY = -1;
-    // whether or not the user panned the image
-    private boolean moved;
-    private static final int INVALID_POINTER_ID = -1;
-    // stores the active pointer (finger touch)
-    private int activePointerID = INVALID_POINTER_ID;
-    // the position of the game view (default: 0, 0)
-    private float translateX;
-    private float translateY;
-    // pinch zoom variables
-    private float scaleFactor = 1.0f;
-    public final static float MIN_ZOOM = 1.0f;
-    public final static float MAX_ZOOM = 5.0f;
 
 
     // list of all the dots
@@ -124,72 +109,16 @@ public class GameView extends View {
                 //get x and y cords of where we touch the screen
                 final float x = event.getX();
                 final float y = event.getY();
-
-                //remember where touch event started
-                lastTouchX = x;
-                lastTouchY = y;
-                moved = false;
-
-                //save the ID of this pointer
-                activePointerID = event.getPointerId(0);
-
-
+                splitSelected(touchX, touchY, false);
+                invalidate();
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
-
-                moved = true;
-
-                //find the index of the active pointer and fetch its position
-                final int pointerIndex = event.findPointerIndex(activePointerID);
-                final float x = event.getX(pointerIndex);
-                final float y = event.getY(pointerIndex);
-
-               // if (!mScaleDetector.isInProgress()) {
-                //calculate the distance in x and y directions
-                final float distanceX = x - lastTouchX;
-                final float distanceY = y - lastTouchY;
-
-                translateX += distanceX;
-                translateY += distanceY;
-
-                //redraw canvas (call onDraw method)
-                invalidate();
-
-               // }
-                //remember this touch position for next move event
-                lastTouchX = x;
-                lastTouchY = y;
-
                 break;
             }
-            case MotionEvent.ACTION_UP:
-                if(!moved) {
-                    splitSelected(touchX, touchY, false);
-                }
-//                lastTouchX = -1;
-//                lastTouchY = -1;
-                activePointerID = INVALID_POINTER_ID;
-                break;
-            case MotionEvent.ACTION_CANCEL: {
-                activePointerID = INVALID_POINTER_ID;
+            case MotionEvent.ACTION_UP: {
                 break;
             }
-            case MotionEvent.ACTION_POINTER_UP: { // idk what most of this does, took it from http://www.northborder-software.com/pinchzoom_and_pan_4.html
-                //Extract the index of the pointer that left the screen
-                final int pointerIndex = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
-                final int pointerId = event.getPointerId(pointerIndex);
-                if (pointerId == activePointerID) {
-                    //Our active pointer is going up Choose another active pointer and adjust
-                    final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
-                    lastTouchX = event.getX(newPointerIndex);
-                    lastTouchY = event.getY(newPointerIndex);
-                    activePointerID = event.getPointerId(newPointerIndex);
-                }
-                break;
-            }
-
-
         }
 
         invalidate();
@@ -200,22 +129,12 @@ public class GameView extends View {
     protected void onDraw(Canvas canvas) {
         canvas.drawColor(Color.WHITE);
 
-
         if(!revealed) {
-            canvas.save();
-            canvas.scale(scaleFactor, scaleFactor);
-            canvas.translate(translateX, translateY);
-
             for (Dot d : dots) {
                 d.draw(canvas, paint, squareMode);
             }
-            canvas.restore();
         } else {
-            canvas.save();
-            canvas.translate(translateX, translateY);
-            canvas.scale(scaleFactor, scaleFactor);
             canvas.drawBitmap(screenSizeBmp, 0, 0, null);
-            canvas.restore();
         }
 
 
@@ -371,39 +290,8 @@ public class GameView extends View {
         int avgColor = getAvgColor(0, 0, gameHeight, gameHeight);
         // add first dot
         dots.add(new Dot(0, 0, gameHeight, avgColor));
-        translateX = 0;
-        translateY = 0;
-        scaleFactor = 1;
-        gameActivity.resetZoomSlider();
         invalidate();
 
     }
 
-
-    public void scale(int scaleFactor) {
-        this.scaleFactor = (MAX_ZOOM - MIN_ZOOM)*(((float)scaleFactor)/100) + MIN_ZOOM;
-
-        //translate the image so that it zooms towards the center
-
-
-        invalidate();
-    }
-
-
-
-
-
-//    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-//        @Override
-//        public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-//
-//            scaleFactor *= scaleGestureDetector.getScaleFactor();
-//            //don't to let the image get too large or small
-//            scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
-//
-//            invalidate();
-//
-//            return true;
-//        }
-//    }
 }

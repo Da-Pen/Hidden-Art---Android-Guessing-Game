@@ -19,7 +19,6 @@ import android.widget.Toast;
 public class GameActivity extends AppCompatActivity {
 
     final public static int SIDE_MARGIN = 30;
-    private SeekBar zoomSlider;
     private GameView gameView;
 
     @Override
@@ -37,31 +36,6 @@ public class GameActivity extends AppCompatActivity {
 
         ConstraintLayout layout = findViewById(R.id.game_layout);
 
-        // slider for zooming
-        zoomSlider = new SeekBar(this);
-        zoomSlider.setId(View.generateViewId());
-        ConstraintLayout.LayoutParams lp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.leftMargin = SIDE_MARGIN;
-        lp.rightMargin = SIDE_MARGIN;
-        zoomSlider.setLayoutParams(lp);
-        layout.addView(zoomSlider);
-        zoomSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                gameView.scale(progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
 
 
 
@@ -183,19 +157,11 @@ public class GameActivity extends AppCompatActivity {
                 ConstraintSet.RIGHT, new int[]{btn_back.getId(), btn_clickAll.getId(),
                         btn_reset.getId(), btn_revealImage.getId()}, null, ConstraintSet.CHAIN_SPREAD);
 
-        c.connect(zoomSlider.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM);
-        c.connect(zoomSlider.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM);
-        c.connect(zoomSlider.getId(), ConstraintSet.LEFT, btn_back.getId(), ConstraintSet.LEFT);
-        c.connect(zoomSlider.getId(), ConstraintSet.RIGHT, btn_revealImage.getId(), ConstraintSet.RIGHT);
 
 
 
         c.applyTo(layout);
         
-    }
-
-    public void resetZoomSlider() {
-         zoomSlider.setProgress(0);
     }
 
 
