@@ -10,5 +10,6 @@
     <string name="btn_revealImage">SHOW SRC</string>
     <string name="btn_hideImage">HIDE SRC</string>
     <string name="btn_reset">RESET</string>
+    <string name="BTN_GUESS">GUESS</string>
 
 </resources>

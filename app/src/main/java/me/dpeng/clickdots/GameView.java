@@ -3,18 +3,24 @@ package me.dpeng.clickdots;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by Daniel Peng on 7/22/2018.
@@ -32,8 +38,8 @@ public class GameView extends View {
 
     // in square mode, squares are displayed instead of circles
     private boolean squareMode = false;
-    // whether or not the user has revealed the source image
-    private boolean revealed = false;
+    // whether or not the user has sourceRevealed the source image
+    private boolean sourceRevealed = false;
     // a bitmap of the source image that has dimensions equal to the screen width (i.e width x width)
     private Bitmap screenSizeBmp;
     // the source image except scaled down to 1/RESOLUTION_RATIOth the size of screenSizeBmp. This
@@ -45,6 +51,18 @@ public class GameView extends View {
 
     private GameActivity gameActivity;
 
+    private int lastTouchX;
+    private int lastTouchY;
+
+
+    private boolean isLoading;
+
+    private Bitmap loadingBmp;
+
+    private String[] validGuesses;
+
+    final private static int START_GUESSES = 3; // the total # of guesses that the user gets
+    private int guessesLeft;
 
 
     // list of all the dots
@@ -58,23 +76,69 @@ public class GameView extends View {
         super(context, attributeSet);
     }
 
-    public GameView(Context context, ConstraintLayout constraintLayout, Bitmap srcBmp) {
+    public GameView(Context context, ConstraintLayout constraintLayout, String imageURL) {
         this(context);
-        init(constraintLayout, srcBmp, context);
+        init(constraintLayout, imageURL, context);
     }
 
 
-    private void init(ConstraintLayout constraintLayout, Bitmap srcBmp, Context context) {
-
-        gameActivity = (GameActivity) context;
-
+    private void init(ConstraintLayout constraintLayout, String imageURL, Context context) {
+        isLoading = true;
         // get screen dimensions
         DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
         gameHeight = dm.widthPixels - GameActivity.SIDE_MARGIN*2;
 
-        // scale bitmaps
-        this.srcBmp = Bitmap.createScaledBitmap(srcBmp, gameHeight / RESOLUTION_RATIO, gameHeight / RESOLUTION_RATIO, false);
-        this.screenSizeBmp = Bitmap.createScaledBitmap(srcBmp, gameHeight, gameHeight, true);
+        // GET THE IMAGE
+        // imageURL is of the format:
+        // url,valid Guess 1,valid Guess 2, ...
+        // we need to split it to store the real url and the valid guesses.
+
+        // temporary: remove the last semicolon from imageURL. Later I will change the content
+        // of the image source txt file to exclude the semicolon.
+        imageURL = imageURL.substring(0, imageURL.length() - 1);
+        // end temporary
+
+        String[] splitURLandGuesses = imageURL.split(",");
+        String realImageURL = splitURLandGuesses[0];
+        validGuesses = Arrays.copyOfRange(splitURLandGuesses, 1, splitURLandGuesses.length);
+
+
+        Picasso.get().load(realImageURL).into(new Target() {
+
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                srcBmp = bitmap;
+                isLoading = false;
+                // scale bitmaps
+                srcBmp = Bitmap.createScaledBitmap(srcBmp, gameHeight / RESOLUTION_RATIO, gameHeight / RESOLUTION_RATIO, false);
+                screenSizeBmp = Bitmap.createScaledBitmap(bitmap, gameHeight, gameHeight, true);
+                resetGame();
+
+            }
+
+            @Override
+            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+                System.out.println("failed to load");
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+                System.out.println("preparing to load");
+            }
+        });
+
+
+        gameActivity = (GameActivity) context;
+
+
+
+
+
+        // load the loading image
+        loadingBmp = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(context.getResources(), R.drawable.loading),
+                gameHeight, gameHeight, false);
 
         this.post(new Runnable() {
             @Override
@@ -90,9 +154,7 @@ public class GameView extends View {
 //        mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 
         paint.setStyle(Paint.Style.FILL);
-
-        resetGame();
-
+        invalidate();
 
     }
 
@@ -102,18 +164,25 @@ public class GameView extends View {
         //the scale gesture detector should inspect all the touch events
         // mScaleDetector.onTouchEvent(event);
 
-        float touchX = event.getX();
-        float touchY = event.getY();
+        if(isLoading) {
+            return false;
+        }
+
         switch(event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN: {
                 //get x and y cords of where we touch the screen
                 final float x = event.getX();
                 final float y = event.getY();
-                splitSelected(touchX, touchY, false);
+                splitSelected(x, y, false);
                 invalidate();
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
+                //get x and y cords of where we touch the screen
+                final float x = event.getX();
+                final float y = event.getY();
+                splitSelected(x, y, true);
+                invalidate();
                 break;
             }
             case MotionEvent.ACTION_UP: {
@@ -127,17 +196,21 @@ public class GameView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+
+        if(isLoading) {
+            canvas.drawBitmap(loadingBmp, 0, 0, null);
+            return;
+        }
+
         canvas.drawColor(Color.WHITE);
 
-        if(!revealed) {
+        if(!sourceRevealed) {
             for (Dot d : dots) {
                 d.draw(canvas, paint, squareMode);
             }
         } else {
             canvas.drawBitmap(screenSizeBmp, 0, 0, null);
         }
-
-
 
     }
 
@@ -150,7 +223,6 @@ public class GameView extends View {
     private int getAvgColor(int startX, int startY, int endX, int endY) {
 
         int totalPixels = (endY - startY)*(endX - startX);
-
 
         int totalDots = 0;
         startX /= RESOLUTION_RATIO;
@@ -242,30 +314,26 @@ public class GameView extends View {
 
         int len = dots.size();
 
-        //use binary search to find selected dot
-//        int checkIndex = len/2;
-//        while(!dots.get(checkIndex).inside(touchX, touchY)) {
-//            if(dots.get(checkIndex).getY())
-//        }
-
-
 
 
         for(int i = 0; i < len; ++i) {
             Dot dot = dots.get(i);
             // if the user pressed in that dot's bounding square
-            if(dot.inside(touchX, touchY)) {
-//                if(moving) {
-//                    // if the user did not "move into" this Dot (i.e their finger was already
-//                    // on the Dot) then do not split it.
-//                    if(dot.inside(lastTouchX, lastTouchY)) {
-//                        return;
-//                    }
-//                }
+            if(dot.isTouchInside(touchX, touchY)) {
+                if(moving) {
+                    // if the user did not "move into" this Dot (i.e their finger was already
+                    // on the Dot) then do not split it.
+                    if(dot.isTouchInside(lastTouchX, lastTouchY)) {
+                        return;
+                    }
+                }
                 splitDot(dot, i);
+                lastTouchX = (int)touchX;
+                lastTouchY = (int)touchY;
                 return;
             }
         }
+
     }
 
     public void splitAll() {
@@ -280,11 +348,12 @@ public class GameView extends View {
     }
 
     public void revealOrHideSourceImage() {
-        revealed = !revealed;
+        sourceRevealed = !sourceRevealed;
         invalidate();
     }
 
     public void resetGame() {
+        guessesLeft = START_GUESSES;
         paint.setColor(getResources().getColor(R.color.game_background));
         dots = new ArrayList<>();
         int avgColor = getAvgColor(0, 0, gameHeight, gameHeight);
@@ -292,6 +361,32 @@ public class GameView extends View {
         dots.add(new Dot(0, 0, gameHeight, avgColor));
         invalidate();
 
+    }
+
+    public void guess(String guess) {
+        guessesLeft--;
+        if(guessesLeft <= 0) {
+            gameOver();
+        }
+        for(String validGuess: validGuesses) {
+            if(guess.equals(validGuess)) {
+                win();
+                return;
+            }
+        }
+        Toast toast = Toast.makeText(gameActivity, "Wrong", Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+    private void gameOver() {
+    }
+
+    private void win() {
+        // show toast to let them know they won
+        Toast toast = Toast.makeText(gameActivity, "CORRECT!", Toast.LENGTH_SHORT);
+        toast.show();
+        sourceRevealed = true;
+        invalidate();
     }
 
 }

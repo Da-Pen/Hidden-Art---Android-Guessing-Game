@@ -72,7 +72,7 @@ public class Dot implements Comparable<Dot>{
      * @param touchY
      * @return
      */
-    public boolean inside(float touchX, float touchY) {
+    public boolean isTouchInside(float touchX, float touchY) {
         return touchX > x && touchX < x + diameter &&
                 touchY > y && touchY < y + diameter;
     }

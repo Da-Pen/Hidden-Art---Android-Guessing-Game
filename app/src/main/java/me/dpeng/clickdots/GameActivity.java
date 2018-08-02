@@ -1,5 +1,6 @@
 package me.dpeng.clickdots;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -11,7 +12,9 @@ import android.os.Bundle;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -20,6 +23,7 @@ public class GameActivity extends AppCompatActivity {
 
     final public static int SIDE_MARGIN = 30;
     private GameView gameView;
+    private EditText et_guess;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,23 +32,18 @@ public class GameActivity extends AppCompatActivity {
 
         // get the intent from the last activity
         Intent intent = getIntent();
-        int imageLocation = intent.getIntExtra(MenuActivity.IMAGE, R.drawable.lion);
-
-        Drawable drawable = getResources().getDrawable(imageLocation);
-        Bitmap sourceBitmap = ((BitmapDrawable)drawable).getBitmap();
+        String imageURL = intent.getStringExtra(MenuActivity.IMAGE);
 
 
         ConstraintLayout layout = findViewById(R.id.game_layout);
 
 
-
-
-
-        gameView = new GameView(this, layout, sourceBitmap);
+        ///---CREATE LAYOUT ITEMS---///
+        gameView = new GameView(this, layout, imageURL);
         gameView.setId(View.generateViewId());
         layout.addView(gameView);
-        ConstraintLayout.LayoutParams gameViewLayout = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT);
+        ConstraintLayout.LayoutParams gameViewLayout = new ConstraintLayout.LayoutParams(
+                ConstraintLayout.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         gameViewLayout.leftMargin = SIDE_MARGIN;
         gameViewLayout.rightMargin = SIDE_MARGIN;
         gameView.setLayoutParams(gameViewLayout);
@@ -116,9 +115,35 @@ public class GameActivity extends AppCompatActivity {
         });
         layout.addView(btn_revealImage);
 
+        // guess EditText
+        et_guess = new EditText(this);
+        et_guess.setId(View.generateViewId());
+        // the text box should expand to match constrains, so we create a new LayoutParams
+        ConstraintLayout.LayoutParams et_guessParams = new ConstraintLayout.LayoutParams(
+                ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.WRAP_CONTENT);
+        et_guess.setLayoutParams(et_guessParams);
+        layout.addView(et_guess);
+
+
+        // guess button
+        final Button btn_guess = new Button(this);
+        btn_guess.setId(View.generateViewId());
+        btn_guess.setText(R.string.BTN_GUESS);
+        btn_guess.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // hide the keyboard
+                hideSoftKeyboard(GameActivity.this);
+                gameView.guess(et_guess.getText().toString());
+
+            }
+        });
+        layout.addView(btn_guess);
+
+
+        ///---CREATE CONSTRAINTS---///
 
         ConstraintSet c = new ConstraintSet();
-
         c.clone(layout);
 
 
@@ -160,9 +185,31 @@ public class GameActivity extends AppCompatActivity {
 
 
 
+        // constrain guess views
+        // constrain guess edittext to bottom left
+        c.connect(et_guess.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM);
+        c.connect(et_guess.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM);
+        c.connect(et_guess.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT, SIDE_MARGIN);
+
+        // constrain guess button to right side of guess edittext
+        c.connect(btn_guess.getId(), ConstraintSet.TOP, et_guess.getId(), ConstraintSet.TOP);
+        c.connect(btn_guess.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT, SIDE_MARGIN);
+
+        c.createHorizontalChain(layout.getId(), ConstraintSet.LEFT, layout.getId(),
+                ConstraintSet.RIGHT, new int[]{et_guess.getId(), btn_guess.getId()},
+                null, ConstraintSet.CHAIN_SPREAD);
+
+
         c.applyTo(layout);
         
     }
 
+    public static void hideSoftKeyboard(Activity activity) {
+        InputMethodManager inputMethodManager =
+                (InputMethodManager) activity.getSystemService(
+                        Activity.INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(
+                activity.getCurrentFocus().getWindowToken(), 0);
+    }
 
 }
