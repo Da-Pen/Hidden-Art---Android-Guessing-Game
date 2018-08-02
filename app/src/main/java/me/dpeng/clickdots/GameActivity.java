@@ -2,28 +2,25 @@ package me.dpeng.clickdots;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.view.DragEvent;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.SeekBar;
-import android.widget.Toast;
+import android.widget.TextView;
 
 public class GameActivity extends AppCompatActivity {
 
     final public static int SIDE_MARGIN = 30;
-    private GameView gameView;
+    private View gameView;
     private EditText et_guess;
+    private TextView tv_numClicks;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,11 +31,13 @@ public class GameActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String imageURL = intent.getStringExtra(MenuActivity.IMAGE);
 
-
-        ConstraintLayout layout = findViewById(R.id.game_layout);
+        // get the layout
+        final ConstraintLayout layout = findViewById(R.id.game_layout);
 
 
         ///---CREATE LAYOUT ITEMS---///
+
+        // create the main view for the game
         gameView = new GameView(this, layout, imageURL);
         gameView.setId(View.generateViewId());
         layout.addView(gameView);
@@ -69,37 +68,13 @@ public class GameActivity extends AppCompatActivity {
         });
         layout.addView(btn_back);
         
-        // "click all" button
-        final ImageButton btn_clickAll = new ImageButton(this);
-        btn_clickAll.setImageResource(R.drawable.icon_click);
-        btn_clickAll.setBackgroundColor(0); //set background to be transparent
-        btn_clickAll.setId(View.generateViewId());
-        btn_clickAll.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast toast = Toast.makeText(GameActivity.this, "Clicking all ...", Toast.LENGTH_SHORT);
-                toast.show();
-                gameView.splitAll();
-                toast.cancel();
+        // text to show how number of clicks so far
+        tv_numClicks = new TextView(this);
+        tv_numClicks.setId(View.generateViewId());
+        tv_numClicks.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 40);
+        tv_numClicks.setText("0");
+        layout.addView(tv_numClicks);
 
-            }
-        });
-        layout.addView(btn_clickAll);
-        
-        
-        // "reset" button
-        final ImageButton btn_reset = new ImageButton(this);
-        btn_reset.setImageResource(R.drawable.icon_reset);
-        btn_reset.setBackgroundColor(0); //set background to be transparent
-        btn_reset.setId(View.generateViewId());
-        btn_reset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                gameView.resetGame();
-            }
-        });
-        layout.addView(btn_reset);
-        
         // "reveal image" button
         final ImageButton btn_revealImage = new ImageButton(this);
         btn_revealImage.setImageResource(R.drawable.icon_show_image);
@@ -108,9 +83,9 @@ public class GameActivity extends AppCompatActivity {
         btn_revealImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                gameView.revealOrHideSourceImage();
-
+                // if it is a gameView object (i.e it is not in the loading stage)
+                if(gameView instanceof GameView)
+                    ((GameView)gameView).revealOrHideSourceImage();
             }
         });
         layout.addView(btn_revealImage);
@@ -134,15 +109,15 @@ public class GameActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // hide the keyboard
                 hideSoftKeyboard(GameActivity.this);
-                gameView.guess(et_guess.getText().toString());
-
+                // if it is a gameView object (i.e it is not in the loading stage)
+                if(gameView instanceof GameView)
+                    ((GameView)gameView).guess(et_guess.getText().toString());
             }
         });
         layout.addView(btn_guess);
 
 
         ///---CREATE CONSTRAINTS---///
-
         ConstraintSet c = new ConstraintSet();
         c.clone(layout);
 
@@ -153,8 +128,8 @@ public class GameActivity extends AppCompatActivity {
         c.connect(gameView.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT);
         c.connect(gameView.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT);
 
-        // the four buttons are along the top of the layout in the following order:
-        // back --- click all --- reset --- reveal image
+        // the top row layout is as follows:
+        // back button --- # of clicks --- reveal image button
 
         // constrain back button to top-left
         c.connect(btn_back.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP);
@@ -162,30 +137,23 @@ public class GameActivity extends AppCompatActivity {
         c.connect(btn_back.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT);
 
 
-        // constrain click all button to right of back button
-        c.connect(btn_clickAll.getId(), ConstraintSet.BOTTOM, btn_back.getId(), ConstraintSet.BOTTOM);
-        //c.connect(btn_clickAll.getId(), ConstraintSet.LEFT, btn_back.getId(), ConstraintSet.RIGHT);
-    
-        // constrain reset button to right of clickAll button
-        c.connect(btn_reset.getId(), ConstraintSet.BOTTOM, btn_clickAll.getId(), ConstraintSet.BOTTOM);
-        //c.connect(btn_reset.getId(), ConstraintSet.LEFT, btn_clickAll.getId(), ConstraintSet.RIGHT);
+        // constrain numguesses textview to the right of back button
+        c.connect(tv_numClicks.getId(), ConstraintSet.LEFT, btn_back.getId(), ConstraintSet.RIGHT);
+        c.connect(tv_numClicks.getId(), ConstraintSet.BOTTOM, btn_back.getId(), ConstraintSet.BOTTOM);
     
         // constrain click all button to right of reset button
         // and constrain its right side to the right side of the layout
-        c.connect(btn_revealImage.getId(), ConstraintSet.BOTTOM, btn_reset.getId(), ConstraintSet.BOTTOM);
+        c.connect(btn_revealImage.getId(), ConstraintSet.TOP, btn_back.getId(), ConstraintSet.TOP);
         //c.connect(btn_revealImage.getId(), ConstraintSet.LEFT, btn_reset.getId(), ConstraintSet.RIGHT);
         c.connect(btn_revealImage.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT);
 
 
-        // create chain for buttons
+        // create chain for top row
         c.createHorizontalChain(layout.getId(), ConstraintSet.LEFT, layout.getId(),
-                ConstraintSet.RIGHT, new int[]{btn_back.getId(), btn_clickAll.getId(),
-                        btn_reset.getId(), btn_revealImage.getId()}, null, ConstraintSet.CHAIN_SPREAD);
+                ConstraintSet.RIGHT, new int[]{btn_back.getId(), tv_numClicks.getId(),
+                        btn_revealImage.getId()}, null, ConstraintSet.CHAIN_SPREAD);
 
 
-
-
-        // constrain guess views
         // constrain guess edittext to bottom left
         c.connect(et_guess.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM);
         c.connect(et_guess.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM);
@@ -200,10 +168,12 @@ public class GameActivity extends AppCompatActivity {
                 null, ConstraintSet.CHAIN_SPREAD);
 
 
+        // apply the ConstraintSet to the layout
         c.applyTo(layout);
         
     }
 
+    // hides the keyboard
     public static void hideSoftKeyboard(Activity activity) {
         InputMethodManager inputMethodManager =
                 (InputMethodManager) activity.getSystemService(
@@ -212,4 +182,9 @@ public class GameActivity extends AppCompatActivity {
                 activity.getCurrentFocus().getWindowToken(), 0);
     }
 
+    // sets the number of clicks. When the user clicks a dot then this is called and it
+    // updates the counter at the top of the screen.
+    public void setNumclicks(int numClicks) {
+        tv_numClicks.setText("" + numClicks);
+    }
 }

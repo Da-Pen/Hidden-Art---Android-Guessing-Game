@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -16,8 +15,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,44 +29,56 @@ import java.util.Arrays;
 
 public class GameView extends View {
 
-    // since the source image is too large to calculate the average color of, we instead load
-    // a compressed version of it (1/RESOLUTION_RATIO of the size) and use that to do calculations
-    public final static int RESOLUTION_RATIO = 10;
-    // minimum diameter for a dot (in pixels). Once the dots are about to become smaller than this,
-    // clicking on the dots does nothing.
-    public final static int MIN_DIAMETER = 10;
 
-    // in square mode, squares are displayed instead of circles
-    private boolean squareMode = false;
-    // whether or not the user has sourceRevealed the source image
-    private boolean sourceRevealed = false;
+    private GameActivity gameActivity;
+
+
+
+
+
+    private Paint paint = new Paint();
+
+
+    ///=== SCREEN & BITMAP VARIABLES ===///
+
     // a bitmap of the source image that has dimensions equal to the screen width (i.e width x width)
     private Bitmap screenSizeBmp;
     // the source image except scaled down to 1/RESOLUTION_RATIOth the size of screenSizeBmp. This
     // is used to calculate average colors.
     private Bitmap srcBmp;
-    private Paint paint = new Paint();
+    private Bitmap loadingBmp;
     // height of this view, in px
     private int gameHeight;
+    // since the source image is too large to calculate the average color of, we instead load
+    // a compressed version of it (1/RESOLUTION_RATIO of the size) and use that to do calculations
+    public final static int RESOLUTION_RATIO = 10;
 
-    private GameActivity gameActivity;
+    ///=== END SCREEN & BITMAP VARIABLES ===///
 
+
+    ///=== GAME LOGIC VARIABLES ===///
+
+    // minimum diameter for a dot (in pixels). Once the dots are about to become smaller than this,
+    // clicking on the dots does nothing.
+    public final static int MIN_DIAMETER = 10;
+    // in square mode, squares are displayed instead of circles
+    private boolean squareMode = false;
+    // whether or not the user has sourceRevealed the source image
+    private boolean sourceRevealed = false;
     private int lastTouchX;
     private int lastTouchY;
-
-
+    private int numClicks = 0;
     private boolean isLoading;
-
-    private Bitmap loadingBmp;
-
     private String[] validGuesses;
-
+    ArrayList<Dot> dots; // list of all the dots
     final private static int START_GUESSES = 3; // the total # of guesses that the user gets
     private int guessesLeft;
 
+    ///=== END GAME LOGIC VARIABLES ===///
 
-    // list of all the dots
-    ArrayList<Dot> dots;
+
+
+    ///=== CONSTRUCTORS ===///
 
     public GameView(Context context) {
         super(context);
@@ -78,12 +90,21 @@ public class GameView extends View {
 
     public GameView(Context context, ConstraintLayout constraintLayout, String imageURL) {
         this(context);
+
         init(constraintLayout, imageURL, context);
     }
 
 
+    // initialises the variables needed for the game to start
     private void init(ConstraintLayout constraintLayout, String imageURL, Context context) {
+        // TODO: temporary: remove the last semicolon from imageURL. Later I will change the content
+        // of the image source txt file to exclude the semicolon.
+        imageURL = imageURL.substring(0, imageURL.length() - 1);
+        // end temporary
+
+
         isLoading = true;
+
         // get screen dimensions
         DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
         gameHeight = dm.widthPixels - GameActivity.SIDE_MARGIN*2;
@@ -92,54 +113,30 @@ public class GameView extends View {
         // imageURL is of the format:
         // url,valid Guess 1,valid Guess 2, ...
         // we need to split it to store the real url and the valid guesses.
-
-        // temporary: remove the last semicolon from imageURL. Later I will change the content
-        // of the image source txt file to exclude the semicolon.
-        imageURL = imageURL.substring(0, imageURL.length() - 1);
-        // end temporary
-
         String[] splitURLandGuesses = imageURL.split(",");
-        String realImageURL = splitURLandGuesses[0];
+        final String realImageURL = splitURLandGuesses[0];
         validGuesses = Arrays.copyOfRange(splitURLandGuesses, 1, splitURLandGuesses.length);
-
-
-        Picasso.get().load(realImageURL).into(new Target() {
-
+        Glide.with(this).asBitmap().load(realImageURL).into(new SimpleTarget<Bitmap>() {
             @Override
-            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                srcBmp = bitmap;
+            public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                // once the image is ready then start the game.
+                srcBmp = Bitmap.createScaledBitmap(resource, gameHeight/RESOLUTION_RATIO,
+                        gameHeight/RESOLUTION_RATIO, false);
+                screenSizeBmp = Bitmap.createScaledBitmap(resource, gameHeight, gameHeight, true);
                 isLoading = false;
-                // scale bitmaps
-                srcBmp = Bitmap.createScaledBitmap(srcBmp, gameHeight / RESOLUTION_RATIO, gameHeight / RESOLUTION_RATIO, false);
-                screenSizeBmp = Bitmap.createScaledBitmap(bitmap, gameHeight, gameHeight, true);
                 resetGame();
 
             }
-
-            @Override
-            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-                System.out.println("failed to load");
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable) {
-                System.out.println("preparing to load");
-            }
         });
 
-
         gameActivity = (GameActivity) context;
-
-
-
-
 
         // load the loading image
         loadingBmp = Bitmap.createScaledBitmap(
                 BitmapFactory.decodeResource(context.getResources(), R.drawable.loading),
                 gameHeight, gameHeight, false);
 
+        // make the height of this view the same as its width (i.e make it square)
         this.post(new Runnable() {
             @Override
             public void run() {
@@ -149,20 +146,15 @@ public class GameView extends View {
                 GameView.this.postInvalidate();
             }
         });
-//
-//        // initialize scale detector
-//        mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 
         paint.setStyle(Paint.Style.FILL);
-        invalidate();
 
+        // once we have initialised the variables then we can draw the canvas
+        invalidate();
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
-        //the scale gesture detector should inspect all the touch events
-        // mScaleDetector.onTouchEvent(event);
 
         if(isLoading) {
             return false;
@@ -170,17 +162,17 @@ public class GameView extends View {
 
         switch(event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN: {
-                //get x and y cords of where we touch the screen
                 final float x = event.getX();
                 final float y = event.getY();
+                // split the dot at the location (x, y)
                 splitSelected(x, y, false);
                 invalidate();
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
-                //get x and y cords of where we touch the screen
                 final float x = event.getX();
                 final float y = event.getY();
+                // split the dot at the location (x, y)
                 splitSelected(x, y, true);
                 invalidate();
                 break;
@@ -198,18 +190,18 @@ public class GameView extends View {
     protected void onDraw(Canvas canvas) {
 
         if(isLoading) {
+            // if loading then draw the loading bitmap
             canvas.drawBitmap(loadingBmp, 0, 0, null);
-            return;
-        }
 
-        canvas.drawColor(Color.WHITE);
+        } else if(sourceRevealed) {
+            // if the user won or gave up then show the source image
+            canvas.drawBitmap(screenSizeBmp, 0, 0, paint);
 
-        if(!sourceRevealed) {
+        } else {
+            // otherwise draw all the dots
             for (Dot d : dots) {
                 d.draw(canvas, paint, squareMode);
             }
-        } else {
-            canvas.drawBitmap(screenSizeBmp, 0, 0, null);
         }
 
     }
@@ -222,9 +214,7 @@ public class GameView extends View {
     // Gets the average color of the rectangle defined by the parameters (in pixels, inclusive) of the srcBmp
     private int getAvgColor(int startX, int startY, int endX, int endY) {
 
-        int totalPixels = (endY - startY)*(endX - startX);
-
-        int totalDots = 0;
+        int totalPixels = 0;
         startX /= RESOLUTION_RATIO;
         startY /= RESOLUTION_RATIO;
         endX /= RESOLUTION_RATIO;
@@ -234,7 +224,7 @@ public class GameView extends View {
         int sumB = 0;
         for(int x = startX; x < endX; ++x) {
             for(int y = startY; y < endY; ++y) {
-                totalDots++;
+                totalPixels++;
                 int pix = srcBmp.getPixel(x, y);
                 sumR += Color.red(pix);
                 sumG += Color.green(pix);
@@ -242,11 +232,11 @@ public class GameView extends View {
             }
         }
 
-        if(totalDots == 0) {
+        if(totalPixels == 0) {
             return -1;
         }
 
-        return Color.rgb(Math.min(sumR/totalDots, 255), Math.min(sumG/totalDots, 255), Math.min(sumB/totalDots, 255));
+        return Color.rgb(Math.min(sumR/totalPixels, 255), Math.min(sumG/totalPixels, 255), Math.min(sumB/totalPixels, 255));
     }
 
     /**
@@ -280,10 +270,13 @@ public class GameView extends View {
         }
     }
 
-    // splits a dot
+    // numClicks a dot
     // index is not used for now but may be used later
     private void splitDot(Dot dot, int index) {
+        // only split it if the resulting dots' diameters will be larger than MIN_DIAMETER
         if(dot.getDiameter() / 2 > MIN_DIAMETER) {
+            numClicks++;
+            gameActivity.setNumclicks(numClicks);
             // REMOVE THE OLD DOT
             dots.remove(index);
             // make sure index is a valid index in dots
@@ -293,19 +286,19 @@ public class GameView extends View {
             int rad = (int) Math.round(((float) dot.getDiameter()) / 2.0);
             int c = getAvgColor(dot.getX(), dot.getY(), dot.getX() + rad, dot.getY() + rad);
             //dots.add(new Dot(dot.getX(), dot.getY(), rad, c));
-            insertDotSorted(new Dot(dot.getX(), dot.getY(), rad, c), index);
+            dots.add(new Dot(dot.getX(), dot.getY(), rad, c));
             // Top right dot
             c = getAvgColor(dot.getX() + rad, dot.getY(), dot.getX() + dot.getDiameter(), dot.getY() + rad);
             //dots.add(new Dot(dot.getX() + rad, dot.getY(), rad, c));
-            insertDotSorted(new Dot(dot.getX() + rad, dot.getY(), rad, c), index);
+            dots.add(new Dot(dot.getX() + rad, dot.getY(), rad, c));
             // Bottom left dot
             c = getAvgColor(dot.getX(), dot.getY() + rad, dot.getX() + rad, dot.getY() + dot.getDiameter());
             //dots.add(new Dot(dot.getX(), dot.getY() + rad, rad, c));
-            insertDotSorted(new Dot(dot.getX(), dot.getY() + rad, rad, c), index);
+            dots.add(new Dot(dot.getX(), dot.getY() + rad, rad, c));
             // Bottom right dot
             c = getAvgColor(dot.getX() + rad, dot.getY() + rad, dot.getX() + dot.getDiameter(), dot.getY() + dot.getDiameter());
             //dots.add(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c));
-            insertDotSorted(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c), index);
+            dots.add(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c));
         }
     }
 
@@ -313,8 +306,6 @@ public class GameView extends View {
     private void splitSelected(float touchX, float touchY, boolean moving) {
 
         int len = dots.size();
-
-
 
         for(int i = 0; i < len; ++i) {
             Dot dot = dots.get(i);
@@ -336,6 +327,7 @@ public class GameView extends View {
 
     }
 
+    // splits all the dots
     public void splitAll() {
         int i = 0;
         while(i < dots.size()) {
@@ -353,8 +345,8 @@ public class GameView extends View {
     }
 
     public void resetGame() {
+        numClicks = 0;
         guessesLeft = START_GUESSES;
-        paint.setColor(getResources().getColor(R.color.game_background));
         dots = new ArrayList<>();
         int avgColor = getAvgColor(0, 0, gameHeight, gameHeight);
         // add first dot
@@ -363,6 +355,7 @@ public class GameView extends View {
 
     }
 
+    // run when the user makes a guess
     public void guess(String guess) {
         guessesLeft--;
         if(guessesLeft <= 0) {
@@ -374,7 +367,10 @@ public class GameView extends View {
                 return;
             }
         }
-        Toast toast = Toast.makeText(gameActivity, "Wrong", Toast.LENGTH_SHORT);
+        String toastText = "INCORRECT: " + guessesLeft;
+        if(guessesLeft == 1) toastText += " guess left!";
+        else toastText += " guesses left!";
+        Toast toast = Toast.makeText(gameActivity, toastText, Toast.LENGTH_SHORT);
         toast.show();
     }
 
@@ -386,6 +382,7 @@ public class GameView extends View {
         Toast toast = Toast.makeText(gameActivity, "CORRECT!", Toast.LENGTH_SHORT);
         toast.show();
         sourceRevealed = true;
+
         invalidate();
     }
 
