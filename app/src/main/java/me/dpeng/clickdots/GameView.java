@@ -3,7 +3,6 @@ package me.dpeng.clickdots;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -16,9 +15,14 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -40,19 +44,26 @@ public class GameView extends View {
 
 
     ///=== SCREEN & BITMAP VARIABLES ===///
-
+    // includes the URL of the image and valid guesses in the format:
+    // imageURL,validGuess1,validGuess2, ...
+    private String imageInfo;
     // a bitmap of the source image that has dimensions equal to the screen width (i.e width x width)
     private Bitmap screenSizeBmp;
     // the source image except scaled down to 1/RESOLUTION_RATIOth the size of screenSizeBmp. This
     // is used to calculate average colors.
     private Bitmap srcBmp;
-    private Bitmap loadingBmp;
+    // private Bitmap loadingBmp;
     // height of this view, in px
     private int gameHeight;
     // since the source image is too large to calculate the average color of, we instead load
     // a compressed version of it (1/RESOLUTION_RATIO of the size) and use that to do calculations
     public final static int RESOLUTION_RATIO = 10;
-
+    // URL of the source image
+    private String imageURL;
+    // boolean used to check if it is the first time this view has been measured.
+    // it is used to scale height of the view to be the same as the width (since we only
+    // need to scale it once)
+    private boolean firstMeasure = true;
     ///=== END SCREEN & BITMAP VARIABLES ===///
 
 
@@ -88,19 +99,61 @@ public class GameView extends View {
         super(context, attributeSet);
     }
 
-    public GameView(Context context, ConstraintLayout constraintLayout, String imageURL) {
+    public GameView(Context context, ConstraintLayout constraintLayout) {
         this(context);
 
-        init(constraintLayout, imageURL, context);
+        init(constraintLayout, context);
     }
 
 
     // initialises the variables needed for the game to start
-    private void init(ConstraintLayout constraintLayout, String imageURL, Context context) {
-        // TODO: temporary: remove the last semicolon from imageURL. Later I will change the content
-        // of the image source txt file to exclude the semicolon.
-        imageURL = imageURL.substring(0, imageURL.length() - 1);
-        // end temporary
+    private void init(ConstraintLayout constraintLayout, Context context) {
+
+        gameActivity = (GameActivity) context;
+
+        // create a thread to get the URL for the image that we want to use
+        Thread getImgURLThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // get a list of the image urls from Firebase
+                try {
+                    URL url = new URL("https://firebasestorage.googleapis.com/v0/b/clickdots-1a597.appspot.com/o/imageSourceURLs.txt?alt=media&token=e766a225-99cf-4186-a679-ff97f7601bfe");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(30000); // time out in 30 sec
+                    try {
+                        BufferedReader bf = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        String currLine;
+                        ArrayList<String> items = new ArrayList<>(); // each item is a string containing
+                        // the URL plus a list of valid guesses
+                        while (true) {
+                            currLine = bf.readLine();
+                            if (currLine != null) items.add(currLine);
+                            else break;
+                        }
+
+                        int choiceIndex = Utilities.randRange(1, items.size()) - 1;
+                        imageInfo = items.get(choiceIndex);
+                        bf.close();
+
+                        gameActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                onImageLoaded();
+                            }
+                        });
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        getImgURLThread.start();
+
 
 
         isLoading = true;
@@ -109,43 +162,43 @@ public class GameView extends View {
         DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
         gameHeight = dm.widthPixels - GameActivity.SIDE_MARGIN*2;
 
+
+    }
+
+    private void onImageLoaded() {
         // GET THE IMAGE
-        // imageURL is of the format:
+        // imageInfo is of the format:
         // url,valid Guess 1,valid Guess 2, ...
         // we need to split it to store the real url and the valid guesses.
-        String[] splitURLandGuesses = imageURL.split(",");
-        final String realImageURL = splitURLandGuesses[0];
+        String[] splitURLandGuesses = imageInfo.split(",");
+        imageURL = splitURLandGuesses[0];
+
+
         validGuesses = Arrays.copyOfRange(splitURLandGuesses, 1, splitURLandGuesses.length);
-        Glide.with(this).asBitmap().load(realImageURL).into(new SimpleTarget<Bitmap>() {
+
+
+        Glide.with(GameView.this).asBitmap().load(imageURL).apply(new
+                RequestOptions().override(gameHeight, gameHeight)).into(new SimpleTarget<Bitmap>() {
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
                 // once the image is ready then start the game.
                 srcBmp = Bitmap.createScaledBitmap(resource, gameHeight/RESOLUTION_RATIO,
                         gameHeight/RESOLUTION_RATIO, false);
-                screenSizeBmp = Bitmap.createScaledBitmap(resource, gameHeight, gameHeight, true);
+                screenSizeBmp = resource;
                 isLoading = false;
                 resetGame();
 
             }
+
         });
 
-        gameActivity = (GameActivity) context;
 
-        // load the loading image
-        loadingBmp = Bitmap.createScaledBitmap(
-                BitmapFactory.decodeResource(context.getResources(), R.drawable.loading),
-                gameHeight, gameHeight, false);
 
-        // make the height of this view the same as its width (i.e make it square)
-        this.post(new Runnable() {
-            @Override
-            public void run() {
-                ViewGroup.LayoutParams mParams = GameView.this.getLayoutParams();
-                mParams.height = GameView.this.getWidth();
-                GameView.this.setLayoutParams(mParams);
-                GameView.this.postInvalidate();
-            }
-        });
+        //        // load the loading image
+        //        loadingBmp = Bitmap.createScaledBitmap(
+        //                BitmapFactory.decodeResource(context.getResources(), R.drawable.loading),
+        //                gameHeight, gameHeight, false);
+
 
         paint.setStyle(Paint.Style.FILL);
 
@@ -166,7 +219,6 @@ public class GameView extends View {
                 final float y = event.getY();
                 // split the dot at the location (x, y)
                 splitSelected(x, y, false);
-                invalidate();
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
@@ -174,11 +226,10 @@ public class GameView extends View {
                 final float y = event.getY();
                 // split the dot at the location (x, y)
                 splitSelected(x, y, true);
-                invalidate();
                 break;
             }
-            case MotionEvent.ACTION_UP: {
-                break;
+            default: {
+                return false;
             }
         }
 
@@ -188,10 +239,12 @@ public class GameView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-
+        //numClicks++;
         if(isLoading) {
             // if loading then draw the loading bitmap
-            canvas.drawBitmap(loadingBmp, 0, 0, null);
+            // canvas.drawBitmap(loadingBmp, 0, 0, null);
+            // if loading then draw three dots to show loading
+            drawLoadingDots(canvas);
 
         } else if(sourceRevealed) {
             // if the user won or gave up then show the source image
@@ -206,9 +259,42 @@ public class GameView extends View {
 
     }
 
+    private void drawLoadingDots(Canvas canvas) {
+        int radius = 30; // radius of loading dots
+        int color = Color.GRAY;
+        int y = gameHeight/2 - radius;
+        int x1 = gameHeight/4 - radius;
+        int x2 = gameHeight/2 - radius;
+        int x3 = (gameHeight*3)/4 - radius;
+
+        Dot d1 = new Dot(x1, y, radius*2, color);
+        Dot d2 = new Dot(x2, y, radius*2, color);
+        Dot d3 = new Dot(x3, y, radius*2, color);
+        d1.draw(canvas, paint, squareMode);
+        d2.draw(canvas, paint, squareMode);
+        d3.draw(canvas, paint, squareMode);
+
+
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if(!firstMeasure) { // we only need to resize the view once
+            return;
+        }
+        firstMeasure = false;
+        // make the height of this view the same as its width (i.e make it square)
+        this.post(new Runnable() {
+            @Override
+            public void run() {
+                ViewGroup.LayoutParams mParams = GameView.this.getLayoutParams();
+                mParams.height = GameView.this.getWidth();
+                GameView.this.setLayoutParams(mParams);
+                // GameView.this.postInvalidate();
+            }
+        });
+
     }
 
     // Gets the average color of the rectangle defined by the parameters (in pixels, inclusive) of the srcBmp
@@ -357,6 +443,7 @@ public class GameView extends View {
 
     // run when the user makes a guess
     public void guess(String guess) {
+        guess = guess.toLowerCase().trim();
         guessesLeft--;
         if(guessesLeft <= 0) {
             gameOver();

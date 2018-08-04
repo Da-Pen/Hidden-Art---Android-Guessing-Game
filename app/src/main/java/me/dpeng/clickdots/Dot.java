@@ -13,12 +13,14 @@ public class Dot implements Comparable<Dot>{
     private int x;
     private int y;
     private int diameter;
+    private int radius; // used to draw things faster
     private int color;
 
     public Dot(int x, int y, int diameter, int color) {
         this.x = x;
         this.y = y;
         this.diameter = diameter;
+        this.radius = diameter/2;
         this.color = color;
     }
 
@@ -29,7 +31,7 @@ public class Dot implements Comparable<Dot>{
         if(squareMode) {
             canvas.drawRect(x, y, x + diameter, y + diameter, paint);
         } else {
-            canvas.drawCircle(x + diameter / 2, y + diameter / 2, diameter / 2, paint);
+            canvas.drawCircle(x + radius, y + radius, radius, paint);
         }
 
     }
@@ -56,6 +58,7 @@ public class Dot implements Comparable<Dot>{
 
     public void setDiameter(int diameter) {
         this.diameter = diameter;
+        this.radius = diameter/2;
     }
 
     public int getColor() {
