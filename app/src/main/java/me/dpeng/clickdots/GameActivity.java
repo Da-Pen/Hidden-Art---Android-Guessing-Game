@@ -2,13 +2,18 @@ package me.dpeng.clickdots;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
 import android.util.TypedValue;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,13 +29,15 @@ public class GameActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        // make sure the keyboard does not open when the activity starts
+        getWindow().setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
         super.onCreate(savedInstanceState);
+
+        // set the layout
         setContentView(R.layout.activity_game);
-
-        // get the intent from the last activity
-        Intent intent = getIntent();
-        String imageURL = intent.getStringExtra(MenuActivity.IMAGE);
-
         // get the layout
         final ConstraintLayout layout = findViewById(R.id.game_layout);
 
@@ -38,7 +45,7 @@ public class GameActivity extends AppCompatActivity {
         ///---CREATE LAYOUT ITEMS---///
 
         // create the main view for the game
-        gameView = new GameView(this, layout, imageURL);
+        gameView = new GameView(this, layout);
         gameView.setId(View.generateViewId());
         layout.addView(gameView);
         ConstraintLayout.LayoutParams gameViewLayout = new ConstraintLayout.LayoutParams(
@@ -90,6 +97,16 @@ public class GameActivity extends AppCompatActivity {
         });
         layout.addView(btn_revealImage);
 
+        ConstraintLayout guessBarLayout = new ConstraintLayout(this);
+        guessBarLayout.setId(View.generateViewId());
+        guessBarLayout.setPadding(70, 0, 0, 0);
+        ConstraintLayout.LayoutParams rlParams = new ConstraintLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rlParams.leftMargin = SIDE_MARGIN;
+        rlParams.rightMargin = SIDE_MARGIN;
+        guessBarLayout.setLayoutParams(rlParams);
+        guessBarLayout.setBackgroundResource(R.drawable.edit_text_style);
+
         // guess EditText
         et_guess = new EditText(this);
         et_guess.setId(View.generateViewId());
@@ -97,7 +114,26 @@ public class GameActivity extends AppCompatActivity {
         ConstraintLayout.LayoutParams et_guessParams = new ConstraintLayout.LayoutParams(
                 ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.WRAP_CONTENT);
         et_guess.setLayoutParams(et_guessParams);
-        layout.addView(et_guess);
+        et_guess.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        et_guess.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                boolean handled = false;
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    // if it is a gameView object (i.e it is not in the loading stage)
+                    if(gameView instanceof GameView)
+                        ((GameView)gameView).guess(et_guess.getText().toString());
+                    handled = true;
+                }
+                return handled;
+            }
+        });
+        et_guess.setHint("enter your guess");
+        et_guess.setBackgroundColor(0); // set background transparent in order to remove underline
+        //et_guess.setPadding(30, 0, 30, 0);
+        guessBarLayout.addView(et_guess);
+
+
 
 
         // guess button
@@ -114,8 +150,11 @@ public class GameActivity extends AppCompatActivity {
                     ((GameView)gameView).guess(et_guess.getText().toString());
             }
         });
-        layout.addView(btn_guess);
+        btn_guess.setBackground(null);
 
+        guessBarLayout.addView(btn_guess);
+
+        layout.addView(guessBarLayout);
 
         ///---CREATE CONSTRAINTS---///
         ConstraintSet c = new ConstraintSet();
@@ -154,19 +193,22 @@ public class GameActivity extends AppCompatActivity {
                         btn_revealImage.getId()}, null, ConstraintSet.CHAIN_SPREAD);
 
 
-        // constrain guess edittext to bottom left
-        c.connect(et_guess.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM);
-        c.connect(et_guess.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM);
-        c.connect(et_guess.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT, SIDE_MARGIN);
+        c.connect(guessBarLayout.getId(), ConstraintSet.LEFT, layout.getId(), ConstraintSet.LEFT);
+        c.connect(guessBarLayout.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT);
+        c.connect(guessBarLayout.getId(), ConstraintSet.TOP, gameView.getId(), ConstraintSet.BOTTOM);
+        c.connect(guessBarLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM);
 
-        // constrain guess button to right side of guess edittext
-        c.connect(btn_guess.getId(), ConstraintSet.TOP, et_guess.getId(), ConstraintSet.TOP);
-        c.connect(btn_guess.getId(), ConstraintSet.RIGHT, layout.getId(), ConstraintSet.RIGHT, SIDE_MARGIN);
-
-        c.createHorizontalChain(layout.getId(), ConstraintSet.LEFT, layout.getId(),
+        ConstraintSet c2 = new ConstraintSet();
+        c2.clone(guessBarLayout);
+//        c2.connect(et_guess.getId(), ConstraintSet.LEFT, guessBarLayout.getId(), ConstraintSet.LEFT);
+//        c2.connect(btn_guess.getId(), ConstraintSet.LEFT, et_guess.getId(), ConstraintSet.RIGHT);
+        c2.connect(et_guess.getId(), ConstraintSet.TOP, guessBarLayout.getId(), ConstraintSet.TOP);
+        c2.connect(et_guess.getId(), ConstraintSet.BOTTOM, guessBarLayout.getId(), ConstraintSet.BOTTOM);
+        c2.connect(btn_guess.getId(), ConstraintSet.TOP, et_guess.getId(), ConstraintSet.TOP);
+        c2.createHorizontalChain(guessBarLayout.getId(), ConstraintSet.LEFT, guessBarLayout.getId(),
                 ConstraintSet.RIGHT, new int[]{et_guess.getId(), btn_guess.getId()},
-                null, ConstraintSet.CHAIN_SPREAD);
-
+              null, ConstraintSet.CHAIN_SPREAD);
+        c2.applyTo(guessBarLayout);
 
         // apply the ConstraintSet to the layout
         c.applyTo(layout);

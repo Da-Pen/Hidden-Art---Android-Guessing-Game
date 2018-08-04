@@ -5,4 +5,5 @@
     <color name="colorAccent">#949494</color>
     <color name="menu_text_color">#777</color>
     <color name="game_background">#FFF</color>
+    <color name="search_bar_color">#D8D8D8</color>
 </resources>
