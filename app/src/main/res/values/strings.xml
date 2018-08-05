@@ -12,7 +12,7 @@
     <string name="btn_revealImage">SHOW SRC</string>
     <string name="btn_hideImage">HIDE SRC</string>
     <string name="btn_reset">RESET</string>
-    <string name="BTN_GUESS">GUESS</string>
+    <string name="BTN_GUESS">GUESS!</string>
     <string name="database_connect_fail">Could not connect to Google!</string>
 
 </resources>

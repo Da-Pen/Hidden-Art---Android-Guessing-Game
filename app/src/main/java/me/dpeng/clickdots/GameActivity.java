@@ -115,12 +115,16 @@ public class GameActivity extends AppCompatActivity {
                 ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.WRAP_CONTENT);
         et_guess.setLayoutParams(et_guessParams);
         et_guess.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        et_guess.setSingleLine();
         et_guess.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 boolean handled = false;
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    // hide the keyboard
+                    hideSoftKeyboard(GameActivity.this);
                     // if it is a gameView object (i.e it is not in the loading stage)
+                    // then make a guess
                     if(gameView instanceof GameView)
                         ((GameView)gameView).guess(et_guess.getText().toString());
                     handled = true;
