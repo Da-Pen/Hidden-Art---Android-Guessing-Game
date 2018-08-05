@@ -15,9 +15,11 @@ public class InstructionsActivity extends AppCompatActivity{
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.instructions_slide);
+        setContentView(R.layout.activity_instructions);
         viewPager = findViewById(R.id.view_pager);
         slideAdapter = new SlideAdapter(this);
         viewPager.setAdapter(slideAdapter);
     }
+
+
 }

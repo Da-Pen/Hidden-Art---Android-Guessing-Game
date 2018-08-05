@@ -2,21 +2,32 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:gravity="center"
     android:id="@+id/slide_linear_layout">
     
     <ImageView
         android:id="@+id/slide_image"
-        android:layout_width="200dp"
-        android:layout_height="200dp" />
+        android:layout_width="350dp"
+        android:layout_height="350dp" />
     
     <TextView
-        android:id="@+id/slide_title"
+        android:id="@+id/tv_slide_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="TITLE"
-        android:textSize="30sp"
-        android:layout_marginTop="40dp"/>
+        android:textAlignment="center"
+        android:textSize="20sp"
+        android:layout_marginTop="30dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"/>
+    
+    <TextView
+        android:textAlignment="center"
+        android:textSize="13sp"
+        android:layout_marginTop="20dp"
+        android:id="@+id/tv_slide_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 
 </LinearLayout>

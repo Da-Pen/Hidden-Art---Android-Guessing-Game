@@ -25,7 +25,6 @@ public class MenuActivity extends AppCompatActivity {
     public static final String EXTRA_MESSAGE = "me.dpeng.clickdots.MESSAGE";
     // string used as extra name corresponding to game image location used in intent to start game
     public static final String IMAGE = "me.dpeng.clickdots.IMAGE";
-    public static final int[] IMAGES = {R.drawable.lion, R.drawable.panda};
     public static final String IMAGE_404 = "https://pbs.twimg.com/profile_images/610486974990913536/5MdbcHvF.png";
 
     @Override

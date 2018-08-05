@@ -3,9 +3,9 @@
 
     <!-- menu screen strings -->
     <string name="menu_title">Click the Dots</string>
-    <string name="menu_random_image">RANDOM IMAGE</string>
-    <string name="menu_choose_image">CHOOSE AN IMAGE</string>
-    <string name="menu_local_image">USE A LOCAL IMAGE</string>
+    <string name="menu_random_image">PLAY</string>
+    <string name="menu_instructions">INSTRUCTIONS</string>
+    <string name="menu_credits">CREDITS</string>
     <string name="no_internet">no internet connection!</string>
     <string name="retry_internet">TRY AGAIN</string>
     <string name="btn_clickAll">CLICK ALL</string>
@@ -14,5 +14,6 @@
     <string name="btn_reset">RESET</string>
     <string name="BTN_GUESS">GUESS!</string>
     <string name="database_connect_fail">Could not connect to Google!</string>
+    <string name="please_wait_load">Please wait until the image has loaded</string>
 
 </resources>

@@ -23,7 +23,7 @@ import android.widget.TextView;
 public class GameActivity extends AppCompatActivity {
 
     final public static int SIDE_MARGIN = 30;
-    private View gameView;
+    private GameView gameView;
     private EditText et_guess;
     private TextView tv_numClicks;
 
@@ -90,9 +90,7 @@ public class GameActivity extends AppCompatActivity {
         btn_revealImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // if it is a gameView object (i.e it is not in the loading stage)
-                if(gameView instanceof GameView)
-                    ((GameView)gameView).revealOrHideSourceImage();
+                gameView.revealOrHideSourceImage();
             }
         });
         layout.addView(btn_revealImage);
@@ -123,10 +121,7 @@ public class GameActivity extends AppCompatActivity {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
                     // hide the keyboard
                     hideSoftKeyboard(GameActivity.this);
-                    // if it is a gameView object (i.e it is not in the loading stage)
-                    // then make a guess
-                    if(gameView instanceof GameView)
-                        ((GameView)gameView).guess(et_guess.getText().toString());
+                    gameView.guess(et_guess.getText().toString());
                     handled = true;
                 }
                 return handled;
@@ -204,8 +199,6 @@ public class GameActivity extends AppCompatActivity {
 
         ConstraintSet c2 = new ConstraintSet();
         c2.clone(guessBarLayout);
-//        c2.connect(et_guess.getId(), ConstraintSet.LEFT, guessBarLayout.getId(), ConstraintSet.LEFT);
-//        c2.connect(btn_guess.getId(), ConstraintSet.LEFT, et_guess.getId(), ConstraintSet.RIGHT);
         c2.connect(et_guess.getId(), ConstraintSet.TOP, guessBarLayout.getId(), ConstraintSet.TOP);
         c2.connect(et_guess.getId(), ConstraintSet.BOTTOM, guessBarLayout.getId(), ConstraintSet.BOTTOM);
         c2.connect(btn_guess.getId(), ConstraintSet.TOP, et_guess.getId(), ConstraintSet.TOP);

@@ -12,25 +12,42 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+
+import org.w3c.dom.Text;
+
 public class SlideAdapter extends PagerAdapter {
     Context context;
     LayoutInflater layoutInflater;
 
     // list of images
-    public int[] imageIds = {
-            R.drawable.black_square,
-            R.drawable.brown_square
+    private int[] imageIds = {
+            R.drawable.instructions_1,
+            R.drawable.instructions_2,
+            R.drawable.instructions_3,
+            R.drawable.instructions_4,
+            R.drawable.instructions_5
     };
 
-    public String[] titles = {
-            "TITLE1",
-            "TITLE2"
+    private String[] titles = {
+            "Click a Dot",
+            "It will split into four smaller dots.",
+            "Soon an image will be revealed.",
+            "Guess what the hidden image is. You get 3 tries!",
+            "You score is the number of clicks you have made. The smaller the score, the better!"
     };
 
-    public int[] bgColors = {
-            Color.RED,
-            Color.BLUE
+    private String[] descriptions = {
+            "",
+            "",
+            "",
+            "",
+            ""
     };
+
+    private int bgColor = 0;
+
+
 
     public SlideAdapter(Context context) {
         this.context = context;
@@ -54,10 +71,13 @@ public class SlideAdapter extends PagerAdapter {
         View view = layoutInflater.inflate(R.layout.instructions_slide, container, false);
         LinearLayout layout = view.findViewById(R.id.slide_linear_layout);
         ImageView image = view.findViewById(R.id.slide_image);
-        TextView title = view.findViewById(R.id.slide_title);
-        layout.setBackgroundColor(bgColors[position]);
-        image.setImageResource(imageIds[position]);
+        TextView title = view.findViewById(R.id.tv_slide_title);
+        TextView description = view.findViewById(R.id.tv_slide_description);
+        Glide.with(context).load(imageIds[position]).into(image);
+        layout.setBackgroundColor(bgColor);
+        // image.setImageResource(imageIds[position]);
         title.setText(titles[position]);
+        description.setText(descriptions[position]);
         container.addView(view);
         return view;
     }

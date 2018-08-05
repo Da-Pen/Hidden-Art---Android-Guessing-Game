@@ -60,6 +60,8 @@ public class GameView extends View {
     public final static int RESOLUTION_RATIO = 10;
     // URL of the source image
     private String imageURL;
+    // true if the image has finished loading
+    private boolean loaded = false;
     // boolean used to check if it is the first time this view has been measured.
     // it is used to scale height of the view to be the same as the width (since we only
     // need to scale it once)
@@ -132,6 +134,10 @@ public class GameView extends View {
                         }
 
                         int choiceIndex = Utilities.randRange(1, items.size()) - 1;
+
+                        // choiceIndex = 7; // use for testing (i.e use the car image)
+
+
                         imageInfo = items.get(choiceIndex);
                         bf.close();
 
@@ -201,7 +207,7 @@ public class GameView extends View {
 
 
         paint.setStyle(Paint.Style.FILL);
-
+        loaded = true;
         // once we have initialised the variables then we can draw the canvas
         invalidate();
     }
@@ -443,6 +449,15 @@ public class GameView extends View {
 
     // run when the user makes a guess
     public void guess(String guess) {
+        // make sure the image has already loaded
+        if(!loaded) {
+            // show toast to notify the user that the image has not loaded yet
+            Toast toast = Toast.makeText(gameActivity,
+                    R.string.please_wait_load, Toast.LENGTH_SHORT);
+            toast.show();
+            return;
+        }
+
         guess = guess.toLowerCase().trim();
         guessesLeft--;
         if(guessesLeft <= 0) {
