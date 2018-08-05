@@ -36,6 +36,7 @@ public class MenuActivity extends AppCompatActivity {
             setContentView(R.layout.activity_no_internet);
         } else {
             // if there is an internet connection then load the normal menu layout
+
             setContentView(R.layout.activity_menu);
         }
     }
@@ -63,6 +64,7 @@ public class MenuActivity extends AppCompatActivity {
         if(Utilities.isNetworkAvailable(this)) {
             // if there is now an internet connection then transition into the normal menu layout
             ViewGroup noInternetSceneRoot = findViewById(R.id.no_internet_layout);
+
             Scene menuScene = Scene.getSceneForLayout(noInternetSceneRoot,
                     R.layout.activity_menu, this);
             TransitionManager.go(menuScene, new Fade());

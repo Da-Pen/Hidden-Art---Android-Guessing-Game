@@ -33,9 +33,7 @@ public class GameActivity extends AppCompatActivity {
         // make sure the keyboard does not open when the activity starts
         getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-
         super.onCreate(savedInstanceState);
-
         // set the layout
         setContentView(R.layout.activity_game);
         // get the layout
@@ -150,9 +148,7 @@ public class GameActivity extends AppCompatActivity {
             }
         });
         btn_guess.setBackground(null);
-
         guessBarLayout.addView(btn_guess);
-
         layout.addView(guessBarLayout);
 
         ///---CREATE CONSTRAINTS---///

@@ -137,7 +137,6 @@ public class GameView extends View {
 
                         // choiceIndex = 7; // use for testing (i.e use the car image)
 
-
                         imageInfo = items.get(choiceIndex);
                         bf.close();
 

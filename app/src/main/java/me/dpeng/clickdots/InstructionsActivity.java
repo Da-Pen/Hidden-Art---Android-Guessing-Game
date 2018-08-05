@@ -21,5 +21,4 @@ public class InstructionsActivity extends AppCompatActivity{
         viewPager.setAdapter(slideAdapter);
     }
 
-
 }
