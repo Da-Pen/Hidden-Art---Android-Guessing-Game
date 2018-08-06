@@ -1,13 +1,14 @@
 package me.dpeng.clickdots;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
+import android.transition.TransitionManager;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
@@ -19,26 +20,50 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
-public class GameActivity extends AppCompatActivity {
+/**
+ * The Activity for the Game. The interface is created here rather than in the XML file. The
+ * interface includes back button, score count and give up button across the top, the GameView
+ * (i.e the container for the actual game) in the middle, and the bar to guess the hidden image
+ * across the bottom.
+ */
+public class GameActivity extends AppCompatActivity implements ConfirmResignDialogFragment.DialogListener{
 
+    // space at the sides of the screen (we need some space because if there is none then it is
+    // difficult for the user to click the dots at the edge of the screen.
     final public static int SIDE_MARGIN = 30;
+    // since the corners of the guess bar are rounded, the text would go extend outside of the
+    // bar if this padding were zero. So we need to set some padding.
+    private final static int GUESS_BAR_PADDING_LEFT = 70;
     private GameView gameView;
+    private ConstraintLayout layout; // the layout for the entire activity
+    private ConstraintLayout guessBarLayout; // the layout for the bottom bar of the activity
     private EditText et_guess;
-    private TextView tv_numClicks;
+    private Button btn_guess;
+    private TextView tv_numClicks; // TextView to keep track of the # of clicks the user has made
+    // Clicking back button and the reveal image button both ask the user to confirm that they
+    // wish to give up. However they perform different actions when the user clicks "CONFIRM": the
+    // back button goes to the menu Activity, while the reveal image button reveals the source image.
+    // Thus we need to keep track of which button they clicked using this boolean.
+    private boolean clickedBack;
+    private boolean gameIsOver = false; // if the game is over (this can be if the user won OR lost
 
+    /**
+     * Sets up the layout and instantiates the GameView.
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         // make sure the keyboard does not open when the activity starts
         getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
         super.onCreate(savedInstanceState);
         // set the layout
         setContentView(R.layout.activity_game);
         // get the layout
-        final ConstraintLayout layout = findViewById(R.id.game_layout);
-
+        layout = findViewById(R.id.game_layout);
 
         ///---CREATE LAYOUT ITEMS---///
 
@@ -60,14 +85,29 @@ public class GameActivity extends AppCompatActivity {
         btn_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Thread backThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Intent intent = new Intent(GameActivity.this, MenuActivity.class);
-                        startActivity(intent);
-                    }
-                });
-                backThread.start();
+//                Thread backThread = new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Intent intent = new Intent(GameActivity.this, MenuActivity.class);
+//                        startActivity(intent);
+//                    }
+//                });
+//                backThread.start();
+
+                // make sure we go back to the main menu once the user clicks "confirm"
+                clickedBack = true;
+                if(gameView != null && gameView.sourceRevealed) {
+                    finish();
+                    return;
+                }
+                FragmentTransaction ft = getFragmentManager().beginTransaction();
+                Fragment prev = getFragmentManager().findFragmentByTag("dialog");
+                if (prev != null) {
+                    ft.remove(prev);
+                }
+                ft.addToBackStack(null);
+                ConfirmResignDialogFragment dialog = new ConfirmResignDialogFragment();
+                dialog.show(ft, "dialog");
 
             }
         });
@@ -88,14 +128,37 @@ public class GameActivity extends AppCompatActivity {
         btn_revealImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                gameView.revealOrHideSourceImage();
+
+                // if the user has already finished the game then just toggle the source image
+                // (i.e we do not need to ask to confirm to give up)
+                if(gameIsOver) {
+                    gameView.toggleSourceImage();
+                    return;
+                }
+
+                // make sure we reveal the source image when the user clicks "confirm"
+                clickedBack = false;
+
+                // create dialog to confirm that the user wants to give up
+                FragmentTransaction ft = getFragmentManager().beginTransaction();
+                Fragment prev = getFragmentManager().findFragmentByTag("dialog");
+                if (prev != null) {
+                    ft.remove(prev);
+                }
+                ft.addToBackStack(null);
+                ConfirmResignDialogFragment dialog = new ConfirmResignDialogFragment();
+                dialog.show(ft, "dialog");
             }
         });
         layout.addView(btn_revealImage);
 
-        ConstraintLayout guessBarLayout = new ConstraintLayout(this);
+        // create the guess bar at the bottom of the screen
+        // Create Layout for the guessing bar item
+        // It consists of the EditText on the left and the "GUESS" button on the right.
+
+        guessBarLayout = new ConstraintLayout(this);
         guessBarLayout.setId(View.generateViewId());
-        guessBarLayout.setPadding(70, 0, 0, 0);
+        guessBarLayout.setPadding(GUESS_BAR_PADDING_LEFT, 0, 0, 0);
         ConstraintLayout.LayoutParams rlParams = new ConstraintLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         rlParams.leftMargin = SIDE_MARGIN;
@@ -103,7 +166,7 @@ public class GameActivity extends AppCompatActivity {
         guessBarLayout.setLayoutParams(rlParams);
         guessBarLayout.setBackgroundResource(R.drawable.edit_text_style);
 
-        // guess EditText
+        // create guess EditText
         et_guess = new EditText(this);
         et_guess.setId(View.generateViewId());
         // the text box should expand to match constrains, so we create a new LayoutParams
@@ -117,9 +180,16 @@ public class GameActivity extends AppCompatActivity {
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 boolean handled = false;
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    // hide the keyboard
-                    hideSoftKeyboard(GameActivity.this);
-                    gameView.guess(et_guess.getText().toString());
+                    String guess = et_guess.getText().toString();
+                    if(guess.isEmpty()) {
+                        Toast toast = Toast.makeText(GameActivity.this,
+                                R.string.empty_guess_warn_toast, Toast.LENGTH_SHORT);
+                        toast.show();
+                    } else {
+                        // hide the keyboard
+                        hideSoftKeyboard(GameActivity.this);
+                        gameView.guess(et_guess.getText().toString());
+                    }
                     handled = true;
                 }
                 return handled;
@@ -127,29 +197,38 @@ public class GameActivity extends AppCompatActivity {
         });
         et_guess.setHint("enter your guess");
         et_guess.setBackgroundColor(0); // set background transparent in order to remove underline
-        //et_guess.setPadding(30, 0, 30, 0);
         guessBarLayout.addView(et_guess);
 
 
-
-
-        // guess button
-        final Button btn_guess = new Button(this);
+        // create guess button
+        btn_guess = new Button(this);
         btn_guess.setId(View.generateViewId());
         btn_guess.setText(R.string.BTN_GUESS);
         btn_guess.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(gameIsOver) {
+                    GameActivity.this.nextLevel();
+                    return;
+                }
                 // hide the keyboard
-                hideSoftKeyboard(GameActivity.this);
-                // if it is a gameView object (i.e it is not in the loading stage)
-                if(gameView instanceof GameView)
-                    ((GameView)gameView).guess(et_guess.getText().toString());
+                String guess = et_guess.getText().toString();
+                if(guess.isEmpty()) {
+                    Toast toast = Toast.makeText(GameActivity.this,
+                            R.string.empty_guess_warn_toast, Toast.LENGTH_SHORT);
+                    toast.show();
+                } else {
+                    hideSoftKeyboard(GameActivity.this);
+                    gameView.guess(et_guess.getText().toString());
+                }
             }
         });
         btn_guess.setBackground(null);
         guessBarLayout.addView(btn_guess);
+
         layout.addView(guessBarLayout);
+
+
 
         ///---CREATE CONSTRAINTS---///
         ConstraintSet c = new ConstraintSet();
@@ -205,7 +284,7 @@ public class GameActivity extends AppCompatActivity {
 
         // apply the ConstraintSet to the layout
         c.applyTo(layout);
-        
+
     }
 
     // hides the keyboard
@@ -217,9 +296,63 @@ public class GameActivity extends AppCompatActivity {
                 activity.getCurrentFocus().getWindowToken(), 0);
     }
 
+    // convert the guess bar into the next button
+    // opposite of showGuessBar()
+    public void showNextButton() {
+        TransitionManager.beginDelayedTransition(layout);
+        et_guess.setWidth(0);
+        et_guess.setEnabled(false);
+        btn_guess.setText(R.string.next);
+        ViewGroup.LayoutParams layoutParams = guessBarLayout.getLayoutParams();
+        layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+        guessBarLayout.setPadding(0, 0, 0, 0);
+        gameIsOver = true;
+    }
+
+    // convert the next button into the guess bar
+    // opposite of showNextButton()
+    public void showGuessBar() {
+        TransitionManager.beginDelayedTransition(layout);
+        ConstraintLayout.LayoutParams et_guessParams = (ConstraintLayout.LayoutParams)et_guess.getLayoutParams();
+        et_guessParams.width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT;
+        et_guess.setEnabled(true);
+        et_guess.setText("");
+        btn_guess.setText(R.string.BTN_GUESS);
+        ViewGroup.LayoutParams layoutParams = guessBarLayout.getLayoutParams();
+        layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        guessBarLayout.setPadding(GUESS_BAR_PADDING_LEFT, 0, 0, 0);
+        gameIsOver = false;
+    }
+
     // sets the number of clicks. When the user clicks a dot then this is called and it
     // updates the counter at the top of the screen.
     public void setNumclicks(int numClicks) {
         tv_numClicks.setText("" + numClicks);
     }
+
+    // what to do if the user clicks "CONFIRM" on the dialog "Are you sure you want to give up?"
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog) {
+        if(clickedBack) finish();
+        else {
+            gameView.toggleSourceImage();
+            showNextButton();
+        }
+    }
+
+    // what to do if the user clicks "CANCEL" on the dialog "Are you sure you want to give up?"
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+
+    }
+
+    private void nextLevel() {
+        // set the next button back to the guess bar
+        showGuessBar();
+        gameView.onImageURLLoaded();
+    }
+
+
+
+
 }

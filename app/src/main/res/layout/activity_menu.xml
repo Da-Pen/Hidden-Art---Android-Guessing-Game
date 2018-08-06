@@ -7,56 +7,8 @@
     tools:context="me.dpeng.clickdots.MenuActivity"
     android:id="@+id/menu_layout">
 
-    <Button
-        android:id="@+id/button"
-        style="@android:style/Widget.Holo.Button.Borderless"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:onClick="startGame"
-        android:text="@string/menu_random_image"
-        android:textColor="@color/menu_text_color"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toTopOf="@+id/button2"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView" />
-
-    <Button
-        android:id="@+id/button2"
-        style="@android:style/Widget.Holo.Button.Borderless"
-        android:layout_width="0dp"
-        android:layout_height="47dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="8dp"
-        android:onClick="instructions"
-        android:text="@string/menu_instructions"
-        android:textColor="@color/menu_text_color"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toTopOf="@+id/button3"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button" />
-
-    <Button
-        android:id="@+id/button3"
-        style="@android:style/Widget.Holo.Button.Borderless"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:layout_marginBottom="100dp"
-        android:text="@string/menu_credits"
-        android:textColor="@color/menu_text_color"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button2" />
-
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/iv_logo"
         android:layout_width="281dp"
         android:layout_height="248dp"
         android:layout_marginBottom="8dp"
@@ -65,7 +17,34 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.19999999"
+        app:layout_constraintVertical_bias="0.2"
         app:srcCompat="@drawable/logo" />
+
+    <Button
+        android:id="@+id/btn_play"
+        style="@style/MenuButton"
+        android:onClick="startGame"
+        android:text="@string/menu_random_image"
+        app:layout_constraintBottom_toTopOf="@+id/btn_instructions"
+        app:layout_constraintTop_toBottomOf="@+id/iv_logo"
+        android:layout_marginTop="100dp"/>
+
+    <Button
+        android:id="@+id/btn_instructions"
+        style="@style/MenuButton"
+        android:onClick="instructions"
+        android:text="@string/menu_instructions"
+        app:layout_constraintBottom_toTopOf="@+id/btn_credits"
+        app:layout_constraintTop_toBottomOf="@+id/btn_play" />
+
+    <Button
+        android:id="@+id/btn_credits"
+        style="@style/MenuButton"
+        android:text="@string/menu_credits"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintTop_toBottomOf="@+id/btn_instructions"
+        android:layout_marginBottom="100dp"/>
+
 
 </android.support.constraint.ConstraintLayout>

@@ -1,6 +1,7 @@
 package me.dpeng.clickdots;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
 
@@ -26,11 +27,14 @@ public class Dot implements Comparable<Dot>{
 
     public void draw(Canvas canvas, Paint paint, boolean squareMode) {
 
-        paint.setColor(this.color);
-
         if(squareMode) {
+            paint.setColor(this.color);
             canvas.drawRect(x, y, x + diameter, y + diameter, paint);
         } else {
+            paint.setColor(GameView.bgColor);
+            // fill background
+            canvas.drawRect(x, y, x + diameter, y + diameter, paint);
+            paint.setColor(this.color);
             canvas.drawCircle(x + radius, y + radius, radius, paint);
         }
 

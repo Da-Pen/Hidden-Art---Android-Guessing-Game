@@ -15,5 +15,11 @@
     <string name="BTN_GUESS">GUESS!</string>
     <string name="database_connect_fail">Could not connect to Google!</string>
     <string name="please_wait_load">Please wait until the image has loaded</string>
+    <string name="confirm">CONFIRM</string>
+    <string name="cancel">CANCEL</string>
+    <string name="dialog_confirm_resign">Are you sure you want to give up?</string>
+    <string name="back_to_menu">back to menu</string>
+    <string name="empty_guess_warn_toast">Please enter a guess</string>
+    <string name="next">NEXT</string>
 
 </resources>
