@@ -51,13 +51,13 @@ public class ConfirmResignDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         // Use the Builder class for convenient dialog construction
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setMessage(R.string.dialog_confirm_resign)
-                .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
+        builder.setMessage(R.string.str_dialog_confirm_resign)
+                .setPositiveButton(R.string.str_confirm, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         mListener.onDialogPositiveClick(ConfirmResignDialogFragment.this);
                     }
                 })
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                .setNegativeButton(R.string.str_cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         mListener.onDialogNegativeClick(ConfirmResignDialogFragment.this);
                     }

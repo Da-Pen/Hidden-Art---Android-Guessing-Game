@@ -3,6 +3,8 @@ package me.dpeng.clickdots;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.support.annotation.NonNull;
 
 /**
@@ -25,15 +27,19 @@ public class Dot implements Comparable<Dot>{
         this.color = color;
     }
 
-    public void draw(Canvas canvas, Paint paint, boolean squareMode) {
+    public void draw(Canvas canvas, Paint paint, boolean clearBackGround) {
 
-        if(squareMode) {
+        if(Utilities.isSquareMode) {
             paint.setColor(this.color);
             canvas.drawRect(x, y, x + diameter, y + diameter, paint);
         } else {
-            paint.setColor(GameView.bgColor);
-            // fill background
-            canvas.drawRect(x, y, x + diameter, y + diameter, paint);
+            if(clearBackGround) {
+                // clear the background if needed
+                Paint clearPaint = new Paint();
+                clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                canvas.drawRect(x, y, x + diameter, y + diameter, clearPaint);
+            }
+            // draw the actual circle
             paint.setColor(this.color);
             canvas.drawCircle(x + radius, y + radius, radius, paint);
         }

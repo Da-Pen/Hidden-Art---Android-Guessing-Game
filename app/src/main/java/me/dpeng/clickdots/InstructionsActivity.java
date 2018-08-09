@@ -16,6 +16,11 @@ public class InstructionsActivity extends AppCompatActivity{
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        if(Utilities.isDarkTheme) {
+            setTheme(R.style.Dark);
+        } else {
+            setTheme(R.style.Light);
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_instructions);
         viewPager = findViewById(R.id.view_pager);

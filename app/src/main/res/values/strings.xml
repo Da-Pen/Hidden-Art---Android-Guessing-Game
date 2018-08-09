@@ -2,24 +2,30 @@
     <string name="app_name">ClickDots</string>
 
     <!-- menu screen strings -->
-    <string name="menu_title">Click the Dots</string>
-    <string name="menu_random_image">PLAY</string>
-    <string name="menu_instructions">INSTRUCTIONS</string>
-    <string name="menu_credits">CREDITS</string>
-    <string name="no_internet">no internet connection!</string>
-    <string name="retry_internet">TRY AGAIN</string>
-    <string name="btn_clickAll">CLICK ALL</string>
-    <string name="btn_revealImage">SHOW SRC</string>
-    <string name="btn_hideImage">HIDE SRC</string>
-    <string name="btn_reset">RESET</string>
-    <string name="BTN_GUESS">GUESS!</string>
-    <string name="database_connect_fail">Could not connect to Google!</string>
-    <string name="please_wait_load">Please wait until the image has loaded</string>
-    <string name="confirm">CONFIRM</string>
-    <string name="cancel">CANCEL</string>
-    <string name="dialog_confirm_resign">Are you sure you want to give up?</string>
-    <string name="back_to_menu">back to menu</string>
-    <string name="empty_guess_warn_toast">Please enter a guess</string>
-    <string name="next">NEXT</string>
+    <string name="str_menu_title">Click the Dots</string>
+    <string name="str_menu_play">PLAY</string>
+    <string name="str_menu_instructions">INSTRUCTIONS</string>
+    <string name="str_menu_credits">CREDITS</string>
+    <string name="str_no_internet">No internet connection!</string>
+    <string name="str_retry_internet">TRY AGAIN</string>
+    <string name="str_btn_clickAll">CLICK ALL</string>
+    <string name="str_btn_revealImage">SHOW SRC</string>
+    <string name="str_btn_hideImage">HIDE SRC</string>
+    <string name="str_btn_reset">RESET</string>
+    <string name="str_btn_guess">GUESS!</string>
+    <string name="str_database_connect_fail">Could not connect to Google!</string>
+    <string name="str_please_wait_load">Please wait until the image has loaded</string>
+    <string name="str_confirm">CONFIRM</string>
+    <string name="str_cancel">CANCEL</string>
+    <string name="str_dialog_confirm_resign">Are you sure you want to give up?</string>
+    <string name="str_back_to_menu">back to menu</string>
+    <string name="str_empty_guess_warn_toast">Please enter a guess</string>
+    <string name="str_next">NEXT</string>
+    <string name="str_square_mode_on">Square Mode is ON</string>
+    <string name="str_square_mode_off">Square Mode is OFF</string>
+    <string name="str_search_bar_hint">Enter your guess</string>
+    <string name="str_still_loading_image">loading image</string>
+    <string name="str_toast_a_correct_ans_was">A correct answer was </string>
+    <string name="str_toast_correct">CORRECT!</string>
 
 </resources>

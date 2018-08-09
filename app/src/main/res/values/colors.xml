@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- colors that were automatically generated -->
     <color name="colorPrimary">#ff974c</color>
     <color name="colorPrimaryDark">#ff6b00</color>
     <color name="colorAccent">#949494</color>
-    <color name="menu_text_color">#777</color>
-    <color name="game_background">#FFF</color>
-    <color name="search_bar_color">#D8D8D8</color>
+
+    <!-- custom defined colors -->
+    <color name="color_background">#FFF</color>
+    <color name="color_background_dark">#000</color>
+
+    <color name="color_menu_text">#000</color>
+    <color name="color_menu_text_dark_theme">#FFF</color>
+
+    <color name="color_search_bar">#D8D8D8</color>
+    <color name="color_search_bar_text">#595959</color>
+    <color name="color_search_bar_hint">#999</color>
 </resources>

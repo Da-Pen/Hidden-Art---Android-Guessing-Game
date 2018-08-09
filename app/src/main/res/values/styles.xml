@@ -1,28 +1,52 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+    <!--<style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">-->
+        <!--<item name="colorPrimary">@color/colorPrimary</item>-->
+        <!--<item name="colorPrimaryDark">@color/colorPrimaryDark</item>-->
+        <!--<item name="colorAccent">@color/colorAccent</item>-->
+        <!--<item name="android:buttonStyle">@android:style/Widget.Holo.Button.Borderless</item>-->
+    <!--</style>-->
+
+    <style name="Dark" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:buttonStyle">@style/DarkButton</item>
+    </style>
+    <style name="Light" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:buttonStyle">@style/LightButton</item>
     </style>
 
-    <style name="NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+    <style name="LightButton" parent="@android:style/Widget.Holo.Button.Borderless">
+        <item name="android:textColor">@color/color_menu_text</item>
     </style>
-    <style name="MenuButton" parent="@android:style/Widget.Holo.Button.Borderless">
+    <style name="DarkButton" parent="@android:style/Widget.Holo.Button.Borderless">
+        <item name="android:textColor">@color/color_menu_text_dark_theme</item>
+    </style>
+
+    <style name="WindowAnimationTransition">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
+
+
+    <!-- BUTTONS -->
+    <style name="MenuButton">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">60dp</item>
         <item name="android:layout_marginBottom">0dp</item>
         <item name="android:layout_marginTop">0dp</item>
-        <item name="android:textColor">@color/menu_text_color</item>
         <item name="android:textSize">20sp</item>
         <item name="layout_constraintLeft_toLeftOf">parent</item>
         <item name="layout_constraintRight_toRightOf">parent</item>
     </style>
+    <style name="MenuImageButton">
+        <item name="android:layout_width">50dp</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:adjustViewBounds">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:padding">15dp</item>
+    </style>
+
 
 
 </resources>

@@ -22,6 +22,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.util.Util;
+
 /**
  * The Activity for the Game. The interface is created here rather than in the XML file. The
  * interface includes back button, score count and give up button across the top, the GameView
@@ -35,7 +37,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     final public static int SIDE_MARGIN = 30;
     // since the corners of the guess bar are rounded, the text would go extend outside of the
     // bar if this padding were zero. So we need to set some padding.
-    private final static int GUESS_BAR_PADDING_LEFT = 70;
+    private final static int GUESS_BAR_PADDING_SP = 20;
+    private static int GUESS_BAR_PADDING_PX;
     private GameView gameView;
     private ConstraintLayout layout; // the layout for the entire activity
     private ConstraintLayout guessBarLayout; // the layout for the bottom bar of the activity
@@ -49,15 +52,26 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     private boolean clickedBack;
     private boolean gameIsOver = false; // if the game is over (this can be if the user won OR lost
 
+    public Toast mToast;
+
     /**
      * Sets up the layout and instantiates the GameView.
      * @param savedInstanceState
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
+        GUESS_BAR_PADDING_PX = Utilities.spToPx(this, GUESS_BAR_PADDING_SP);
         // make sure the keyboard does not open when the activity starts
         getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
+        // set the theme to be dark if dark mode is on
+        if(Utilities.isDarkTheme) {
+            setTheme(R.style.Dark);
+        } else {
+            setTheme(R.style.Light);
+        }
 
         super.onCreate(savedInstanceState);
         // set the layout
@@ -79,7 +93,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
         // "back" button
         final ImageButton btn_back = new ImageButton(this);
-        btn_back.setImageResource(R.drawable.icon_back);
+        btn_back.setImageResource(Utilities.isDarkTheme ? R.drawable.icon_back_white :
+                R.drawable.icon_back_black);
         btn_back.setBackgroundColor(0); //set background to be transparent
         btn_back.setId(View.generateViewId());
         btn_back.setOnClickListener(new View.OnClickListener() {
@@ -122,7 +137,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
         // "reveal image" button
         final ImageButton btn_revealImage = new ImageButton(this);
-        btn_revealImage.setImageResource(R.drawable.icon_show_image);
+        btn_revealImage.setImageResource(Utilities.isDarkTheme ? R.drawable.icon_show_image_white :
+                R.drawable.icon_show_image_black);
         btn_revealImage.setBackgroundColor(0); //set background to be transparent
         btn_revealImage.setId(View.generateViewId());
         btn_revealImage.setOnClickListener(new View.OnClickListener() {
@@ -158,7 +174,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
         guessBarLayout = new ConstraintLayout(this);
         guessBarLayout.setId(View.generateViewId());
-        guessBarLayout.setPadding(GUESS_BAR_PADDING_LEFT, 0, 0, 0);
+        guessBarLayout.setPadding(GUESS_BAR_PADDING_PX, 0, GUESS_BAR_PADDING_PX, 0);
         ConstraintLayout.LayoutParams rlParams = new ConstraintLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         rlParams.leftMargin = SIDE_MARGIN;
@@ -175,6 +191,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         et_guess.setLayoutParams(et_guessParams);
         et_guess.setImeOptions(EditorInfo.IME_ACTION_DONE);
         et_guess.setSingleLine();
+        et_guess.setHintTextColor(getResources().getColor(R.color.color_search_bar_hint));
+        et_guess.setTextColor(getResources().getColor(R.color.color_search_bar_text));
         et_guess.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -183,7 +201,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
                     String guess = et_guess.getText().toString();
                     if(guess.isEmpty()) {
                         Toast toast = Toast.makeText(GameActivity.this,
-                                R.string.empty_guess_warn_toast, Toast.LENGTH_SHORT);
+                                R.string.str_empty_guess_warn_toast, Toast.LENGTH_SHORT);
                         toast.show();
                     } else {
                         // hide the keyboard
@@ -195,7 +213,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
                 return handled;
             }
         });
-        et_guess.setHint("enter your guess");
+        et_guess.setHint(R.string.str_search_bar_hint);
         et_guess.setBackgroundColor(0); // set background transparent in order to remove underline
         guessBarLayout.addView(et_guess);
 
@@ -203,7 +221,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         // create guess button
         btn_guess = new Button(this);
         btn_guess.setId(View.generateViewId());
-        btn_guess.setText(R.string.BTN_GUESS);
+        btn_guess.setText(R.string.str_btn_guess);
+        btn_guess.setTextColor(getResources().getColor(R.color.color_search_bar_text));
         btn_guess.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -215,7 +234,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
                 String guess = et_guess.getText().toString();
                 if(guess.isEmpty()) {
                     Toast toast = Toast.makeText(GameActivity.this,
-                            R.string.empty_guess_warn_toast, Toast.LENGTH_SHORT);
+                            R.string.str_empty_guess_warn_toast, Toast.LENGTH_SHORT);
                     toast.show();
                 } else {
                     hideSoftKeyboard(GameActivity.this);
@@ -302,10 +321,9 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         TransitionManager.beginDelayedTransition(layout);
         et_guess.setWidth(0);
         et_guess.setEnabled(false);
-        btn_guess.setText(R.string.next);
+        btn_guess.setText(R.string.str_next);
         ViewGroup.LayoutParams layoutParams = guessBarLayout.getLayoutParams();
         layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-        guessBarLayout.setPadding(0, 0, 0, 0);
         gameIsOver = true;
     }
 
@@ -317,10 +335,9 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         et_guessParams.width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT;
         et_guess.setEnabled(true);
         et_guess.setText("");
-        btn_guess.setText(R.string.BTN_GUESS);
+        btn_guess.setText(R.string.str_btn_guess);
         ViewGroup.LayoutParams layoutParams = guessBarLayout.getLayoutParams();
         layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        guessBarLayout.setPadding(GUESS_BAR_PADDING_LEFT, 0, 0, 0);
         gameIsOver = false;
     }
 
