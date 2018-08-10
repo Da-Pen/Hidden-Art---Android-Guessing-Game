@@ -9,7 +9,7 @@
     <ImageView
         android:id="@+id/slide_image"
         android:layout_width="1000dp"
-        android:layout_height="350dp" />
+        android:layout_height="300dp" />
     
     <TextView
         android:id="@+id/tv_slide_title"
@@ -20,14 +20,6 @@
         android:layout_marginTop="30dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp"/>
-    
-    <TextView
-        android:textAlignment="center"
-        android:textSize="13sp"
-        android:layout_marginTop="20dp"
-        android:id="@+id/tv_slide_description"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
 
 
 </LinearLayout>

@@ -25,7 +25,11 @@
     <string name="str_square_mode_off">Square Mode is OFF</string>
     <string name="str_search_bar_hint">Enter your guess</string>
     <string name="str_still_loading_image">loading image</string>
-    <string name="str_toast_a_correct_ans_was">A correct answer was </string>
+    <string name="str_toast_a_correct_ans_was">A correct answer was</string>
     <string name="str_toast_correct">CORRECT!</string>
+    <string name="str_toast_drag_hint">TIP: drag your finger to click dots faster</string>
+    <string name="str_toast_incorrect">INCORRECT:</string>
+    <string name="str_toast_guess_left">guess left!</string>
+    <string name="str_toast_guesses_left">guesses left!</string>
 
 </resources>

@@ -50,7 +50,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     // back button goes to the menu Activity, while the reveal image button reveals the source image.
     // Thus we need to keep track of which button they clicked using this boolean.
     private boolean clickedBack;
-    private boolean gameIsOver = false; // if the game is over (this can be if the user won OR lost
+    public boolean gameIsOver = false; // if the game is over (this can be if the user won OR lost
 
     public Toast mToast;
 
@@ -200,9 +200,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
                     String guess = et_guess.getText().toString();
                     if(guess.isEmpty()) {
-                        Toast toast = Toast.makeText(GameActivity.this,
-                                R.string.str_empty_guess_warn_toast, Toast.LENGTH_SHORT);
-                        toast.show();
+                        mToast.setText(R.string.str_empty_guess_warn_toast);
+                        mToast.show();
                     } else {
                         // hide the keyboard
                         hideSoftKeyboard(GameActivity.this);
@@ -233,9 +232,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
                 // hide the keyboard
                 String guess = et_guess.getText().toString();
                 if(guess.isEmpty()) {
-                    Toast toast = Toast.makeText(GameActivity.this,
-                            R.string.str_empty_guess_warn_toast, Toast.LENGTH_SHORT);
-                    toast.show();
+                    mToast.setText(R.string.str_empty_guess_warn_toast);
+                    mToast.show();
                 } else {
                     hideSoftKeyboard(GameActivity.this);
                     gameView.guess(et_guess.getText().toString());
@@ -308,11 +306,15 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
     // hides the keyboard
     public static void hideSoftKeyboard(Activity activity) {
-        InputMethodManager inputMethodManager =
-                (InputMethodManager) activity.getSystemService(
-                        Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(
-                activity.getCurrentFocus().getWindowToken(), 0);
+        try {
+            InputMethodManager inputMethodManager =
+                    (InputMethodManager) activity.getSystemService(
+                            Activity.INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(
+                    activity.getCurrentFocus().getWindowToken(), 0);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
     }
 
     // convert the guess bar into the next button

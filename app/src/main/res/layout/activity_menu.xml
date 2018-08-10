@@ -9,11 +9,10 @@
 
     <ImageView
         android:id="@+id/iv_logo"
-        android:layout_width="281dp"
-        android:layout_height="248dp"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.504"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -23,17 +22,23 @@
     <Button
         android:id="@+id/btn_play"
         style="@style/MenuButton"
-        app:layout_constraintVertical_chainStyle="packed"
+        android:layout_height="wrap_content"
         android:onClick="startGame"
         android:text="@string/str_menu_play"
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp"
         app:layout_constraintBottom_toTopOf="@+id/btn_instructions"
-        app:layout_constraintTop_toBottomOf="@+id/iv_logo" />
+        app:layout_constraintTop_toBottomOf="@+id/iv_logo"
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <Button
         android:id="@+id/btn_instructions"
         style="@style/MenuButton"
+        android:layout_height="wrap_content"
         android:onClick="instructions"
         android:text="@string/str_menu_instructions"
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp"
         app:layout_constraintBottom_toTopOf="@+id/btn_toggleSquareMode"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

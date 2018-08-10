@@ -20,15 +20,23 @@ public class MenuActivity extends AppCompatActivity {
     // string used as extra name corresponding to game image location used in intent to start game
     public static final String IMAGE = "me.dpeng.clickdots.IMAGE";
     public static final String IMAGE_404 = "https://pbs.twimg.com/profile_images/610486974990913536/5MdbcHvF.png";
+    private Toast mToast;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
+
         // determine and apply the app's theme color
         // find preferences file
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         boolean isDarkTheme = preferences.getBoolean(Utilities.KEY_IS_DARK_THEME, false);
+        boolean isSquareMode = preferences.getBoolean(Utilities.KEY_IS_SQUARE_MODE, false);
         // save the boolean in an application-wide variable so it can easily be accessed in other activities
         Utilities.isDarkTheme = isDarkTheme;
+        Utilities.isSquareMode = isSquareMode;
+
         if(isDarkTheme) {
             //setTheme(R.style.DarkTheme);
             setTheme(R.style.Dark);
@@ -78,17 +86,16 @@ public class MenuActivity extends AppCompatActivity {
             Scene menuScene = Scene.getSceneForLayout(noInternetSceneRoot,
                     R.layout.activity_menu, this);
             TransitionManager.go(menuScene, new Fade());
+            recalculateButtonResources();
 
         } else {
             // if there is still no internet, notify the user via Toast
-            Toast toast = Toast.makeText(this,
-                    R.string.str_no_internet, Toast.LENGTH_SHORT);
-            toast.show();
+            mToast.setText(R.string.str_no_internet);
+            mToast.show();
         }
     }
 
     public void toggleSquareMode(View view) {
-        System.out.println("toggling square mode");
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         Utilities.isSquareMode = !sharedPreferences.getBoolean(Utilities.KEY_IS_SQUARE_MODE, false);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -96,10 +103,9 @@ public class MenuActivity extends AppCompatActivity {
         editor.apply();
 
         // let the user know that square mode is on or off via Toast
-        Toast toast = Toast.makeText(this,
-                Utilities.isSquareMode ? getResources().getString(R.string.str_square_mode_on):
-                        getResources().getString(R.string.str_square_mode_off), Toast.LENGTH_SHORT);
-        toast.show();
+
+        mToast.setText(Utilities.isSquareMode ? getResources().getString(R.string.str_square_mode_on):getResources().getString(R.string.str_square_mode_off));
+        mToast.show();
 
         // alter the button image
         recalculateButtonResources();
@@ -107,7 +113,6 @@ public class MenuActivity extends AppCompatActivity {
     }
 
     public void toggleDarkTheme(View view) {
-        System.out.println("toggling dark theme");
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         Utilities.isDarkTheme = !sharedPreferences.getBoolean(Utilities.KEY_IS_DARK_THEME, false);
         SharedPreferences.Editor editor = sharedPreferences.edit();

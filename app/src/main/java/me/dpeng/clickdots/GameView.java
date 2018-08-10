@@ -11,10 +11,10 @@ import android.preference.PreferenceManager;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -40,11 +40,11 @@ public class GameView extends View {
     ///=== SCREEN & BITMAP VARIABLES ===///
     private Paint paint = new Paint();
     // a list of all the image options. We keep the entire list because so that when the user
-    // clicks "next" after completing a game then we do not have to connect to Firebase again
+    // clicks "next" after completing a game then we do not have to connect to Dropbox again
     private ArrayList<String> imageOptions;
     private int choiceIndex; // stores the index of imageOptions that we are using for the current game
     // an online txt file containing information for where to find the images
-    private final String IMAGE_SOURCES_TXT = "https://firebasestorage.googleapis.com/v0/b/clickdots-1a597.appspot.com/o/imageSourceURLs.txt?alt=media&token=e766a225-99cf-4186-a679-ff97f7601bfe";
+    private final String IMAGE_SOURCES_TXT = "https://dl.dropboxusercontent.com/s/h4ayiu9tlaz6xyh/imageSourceURLs.txt?dl=0";
     // includes the URL of the image and valid guesses in the format:
     // imageURL,validGuess1,validGuess2, ...
     private String imageInfo;
@@ -55,7 +55,7 @@ public class GameView extends View {
     private Bitmap srcBmp;
     // private Bitmap loadingBmp;
     // height of this view, in px
-    private int gameDiameter;
+    private int viewDiameter;
     // since the source image is too large to calculate the average color of, we instead load
     // a compressed version of it (1/RESOLUTION_RATIO of the size) and use that to do calculations
     public final int RESOLUTION_RATIO = 10;
@@ -74,9 +74,13 @@ public class GameView extends View {
 
     ///=== GAME LOGIC VARIABLES ===///
 
-    // minimum diameter for a dot (in pixels). Once the dots are about to become smaller than this,
-    // clicking on the dots does nothing.
-    public final static int MIN_DIAMETER = 10;
+    // The maximum number of clicks before the dot cannot be clicked anymore. I.e there is a
+    // maximum of 4^MAXCLICKS dots on the screen.
+    private final static int MAX_CLICKS = 6;
+    // the smallest diameter for a dot.
+    // SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / 2^MAX_CLICKS)));
+    // It is calculated when the game is initialised.
+    private int SMALLEST_DIAMETER;
     // whether or not the user has sourceRevealed the source image
     public boolean sourceRevealed = false;
     private int lastTouchX;
@@ -87,7 +91,11 @@ public class GameView extends View {
     ArrayList<Dot> dots; // list of all the dots
     final private static int START_GUESSES = 3; // the total # of guesses that the user gets
     private int guessesLeft;
+    // used to track how many clicks in a row (and not drags) the user has done. If they have
+    // clicked many times, show a Toast with a hint telling them that they can drag their finger
     private int clicksInARow;
+    private static final int CLICKS_IN_A_ROW_BEFORE_HINT = 15; // # of clicks before showing drag hint
+    private boolean connectionFailed;
     ///=== END GAME LOGIC VARIABLES ===///
 
 
@@ -104,14 +112,13 @@ public class GameView extends View {
 
     public GameView(Context context, ConstraintLayout constraintLayout) {
         this(context);
-
-        init(constraintLayout, context);
+        init(context);
     }
 
 
     // initialises the variables needed for the game to start
-    private void init(ConstraintLayout constraintLayout, Context context) {
-
+    private void init(Context context) {
+        connectionFailed = false;
         gameActivity = (GameActivity) context;
 
         // get the SharedPreferences to check if squareMode is on
@@ -122,11 +129,11 @@ public class GameView extends View {
         Thread getImgURLThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                // get a list of the image urls from Firebase
+                // get a list of the image urls from Dropbox
                 try {
                     URL url = new URL(IMAGE_SOURCES_TXT);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setConnectTimeout(30000); // time out in 30 sec
+                    conn.setConnectTimeout(20000); // time out in 20 sec
                     try {
                         BufferedReader bf = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                         String currLine;
@@ -149,10 +156,27 @@ public class GameView extends View {
 
                     } catch (Exception e) {
                         e.printStackTrace();
+                        // if the connection failed then let the user know
+                        gameActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                connectionFailed = true;
+                                invalidate();
+                            }
+                        });
                     }
 
                 } catch (Exception e) {
                     e.printStackTrace();
+                    // if the connection failed then let the user know
+                    connectionFailed = true;
+                    gameActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            connectionFailed = true;
+                            invalidate();
+                        }
+                    });
                 }
             }
         });
@@ -163,9 +187,13 @@ public class GameView extends View {
 
         // get screen dimensions
         DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
-        gameDiameter = dm.widthPixels - GameActivity.SIDE_MARGIN*2;
+        viewDiameter = dm.widthPixels - GameActivity.SIDE_MARGIN*2;
 
-        gameBmp = Bitmap.createBitmap(gameDiameter, gameDiameter, Bitmap.Config.ARGB_8888);
+        // calculate the smallest diameter for a Dot before it is unsplittable
+        SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / Math.pow(2, MAX_CLICKS)));
+
+
+        gameBmp = Bitmap.createBitmap(viewDiameter, viewDiameter, Bitmap.Config.ARGB_8888);
         gameCanvas = new Canvas(gameBmp);
 
 
@@ -190,12 +218,12 @@ public class GameView extends View {
 
 
         Glide.with(GameView.this).asBitmap().load(imageURL).apply(new
-                RequestOptions().override(gameDiameter, gameDiameter)).into(new SimpleTarget<Bitmap>() {
+                RequestOptions().override(viewDiameter, viewDiameter)).into(new SimpleTarget<Bitmap>() {
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
                 // once the image is ready then start the game.
-                srcBmp = Bitmap.createScaledBitmap(resource, gameDiameter /RESOLUTION_RATIO,
-                        gameDiameter /RESOLUTION_RATIO, false);
+                srcBmp = Bitmap.createScaledBitmap(resource, viewDiameter /RESOLUTION_RATIO,
+                        viewDiameter /RESOLUTION_RATIO, false);
                 screenSizeBmp = resource;
                 isLoading = false;
                 onImageLoaded();
@@ -212,6 +240,11 @@ public class GameView extends View {
 
         GameActivity.hideSoftKeyboard(gameActivity);
 
+        if(connectionFailed) {
+            init(gameActivity);
+            invalidate();
+        }
+
         if(isLoading) {
             gameActivity.mToast.setText(R.string.str_still_loading_image);
             gameActivity.mToast.show();
@@ -224,6 +257,14 @@ public class GameView extends View {
 
         switch(event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN: {
+                clicksInARow++;
+                if(clicksInARow > CLICKS_IN_A_ROW_BEFORE_HINT) {
+                    gameActivity.mToast.setText(R.string.str_toast_drag_hint);
+                    gameActivity.mToast.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
+                    gameActivity.mToast.show();
+                    // don't show the hint again this game
+                    clicksInARow = -1000;
+                }
                 final float x = event.getX();
                 final float y = event.getY();
                 // split the dot at the location (x, y)
@@ -231,6 +272,7 @@ public class GameView extends View {
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
+                clicksInARow = 0;
                 final float x = event.getX();
                 final float y = event.getY();
                 // split the dot at the location (x, y)
@@ -248,8 +290,14 @@ public class GameView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        //numClicks++;
-        if(isLoading) {
+        if(connectionFailed) {
+            paint.setColor(Utilities.isDarkTheme ? Color.WHITE : Color.BLACK);
+            paint.setTextSize(60);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("Could not connect to Dropbox.", viewDiameter/2, viewDiameter/2, paint);
+            paint.setTextSize(40);
+            canvas.drawText("Click to try again", viewDiameter/2, viewDiameter/2 + 100, paint);
+        } else if(isLoading) {
             // if loading then draw the loading bitmap
             // canvas.drawBitmap(loadingBmp, 0, 0, null);
             // if loading then draw three dots to show loading
@@ -270,10 +318,10 @@ public class GameView extends View {
     private void drawLoadingDots(Canvas canvas) {
         int radius = 30; // radius of loading dots
         int color = Color.GRAY;
-        int y = gameDiameter /2 - radius;
-        int x1 = gameDiameter /4 - radius;
-        int x2 = gameDiameter /2 - radius;
-        int x3 = (gameDiameter *3)/4 - radius;
+        int y = viewDiameter /2 - radius;
+        int x1 = viewDiameter /4 - radius;
+        int x2 = viewDiameter /2 - radius;
+        int x3 = (viewDiameter *3)/4 - radius;
 
         Dot d1 = new Dot(x1, y, radius*2, color);
         Dot d2 = new Dot(x2, y, radius*2, color);
@@ -348,10 +396,15 @@ public class GameView extends View {
      * then it is unsuccessful)
      */
     private boolean splitDot(Dot dot, int index) {
-        // only split it if the resulting dots' diameters will be larger than MIN_DIAMETER
-        if(dot.getDiameter() / 2 > MIN_DIAMETER) {
-            numClicks++;
-            gameActivity.setNumclicks(numClicks);
+        // only split it if there has been less than MAX_CLICKS
+
+        if(dot.getDiameter() / 2 > SMALLEST_DIAMETER) {
+            if(!gameActivity.gameIsOver) {
+                // if the game is already over, the user can continue to click without
+                // increasing their score
+                numClicks++;
+                gameActivity.setNumclicks(numClicks);
+            }
             // REMOVE THE OLD DOT
             dots.remove(index);
             int size = dots.size();
@@ -422,14 +475,16 @@ public class GameView extends View {
         invalidate();
     }
 
+    // resets the game
     private void onImageLoaded() {
         numClicks = 0;
+        clicksInARow = 0;
         gameActivity.setNumclicks(0);
         guessesLeft = START_GUESSES;
         dots = new ArrayList<>();
-        int avgColor = getAvgColor(0, 0, gameDiameter, gameDiameter);
+        int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
         // add first dot
-        dots.add(new Dot(0, 0, gameDiameter, avgColor));
+        dots.add(new Dot(0, 0, viewDiameter, avgColor));
         dots.get(0).draw(gameCanvas, paint, true);
         invalidate();
     }
@@ -448,13 +503,8 @@ public class GameView extends View {
 
         // check if the user guessed correctly
         guess = guess.toLowerCase().trim();
-        guessesLeft--;
 
-        // if the user has no more guesses then they lose
-        if(guessesLeft < 0) {
-            gameOver();
-            return false;
-        }
+
         for(String validGuess: validGuesses) {
             if(guess.equals(validGuess)) {
                 win();
@@ -462,11 +512,19 @@ public class GameView extends View {
             }
         }
 
-        // if the user guessed wrong
+        guessesLeft--;
 
-        String toastText = "INCORRECT: " + guessesLeft;
-        if(guessesLeft == 1) toastText += " guess left!";
-        else toastText += " guesses left!";
+        // if the user has no more guesses then they lose
+        if(guessesLeft <= 0) {
+            gameOver();
+            return false;
+        }
+
+        // if the user guessed wrong and still has some lives left then let them know how many
+        String toastText = getResources().getString(R.string.str_toast_incorrect)
+                + " " + guessesLeft + " ";
+        if(guessesLeft == 1) toastText += getContext().getString(R.string.str_toast_guess_left);
+        else toastText += getContext().getString(R.string.str_toast_guesses_left);
         gameActivity.mToast.setText(toastText);
         gameActivity.mToast.show();
         return false;
@@ -474,7 +532,7 @@ public class GameView extends View {
 
     private void gameOver() {
         // show Toast to tell the user what the correct word was
-        String toastText = getResources().getString(R.string.str_toast_a_correct_ans_was);
+        String toastText = getResources().getString(R.string.str_toast_a_correct_ans_was) + " ";
         toastText += validGuesses[0];
         gameActivity.mToast.setText(toastText);
         gameActivity.mToast.show();

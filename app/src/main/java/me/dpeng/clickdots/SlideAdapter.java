@@ -37,8 +37,6 @@ public class SlideAdapter extends PagerAdapter {
             "You score is the number of clicks you have made. The smaller the score, the better!"
     };
 
-    private String[] descriptions = { "", "", "", "", "" };
-
     private int bgColor = 0;
 
 
@@ -66,11 +64,9 @@ public class SlideAdapter extends PagerAdapter {
         LinearLayout layout = view.findViewById(R.id.slide_linear_layout);
         ImageView image = view.findViewById(R.id.slide_image);
         TextView title = view.findViewById(R.id.tv_slide_title);
-        TextView description = view.findViewById(R.id.tv_slide_description);
         layout.setBackgroundColor(bgColor);
         Glide.with(context).load(imageIds[position]).into(image);
         title.setText(titles[position]);
-        description.setText(descriptions[position]);
         container.addView(view);
         return view;
     }

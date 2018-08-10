@@ -12,8 +12,8 @@ import java.util.Random;
 
 public abstract class Utilities {
 
-    public static boolean isDarkTheme;
-    public static boolean isSquareMode;
+    public static boolean isDarkTheme = false;
+    public static boolean isSquareMode = false;
 
     // the keys used to retrieve the preferences from SharedPreferences
     public static final String KEY_IS_DARK_THEME = "isDarkTheme";
