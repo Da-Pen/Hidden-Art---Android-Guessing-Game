@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
@@ -35,6 +36,9 @@ public class GameView extends View {
 
     // the "parent" activity
     private GameActivity gameActivity;
+
+    // time before it times out when accessing Dropbox
+    private static final int TIME_TO_TIMEOUT = 10000; // 10 seconds
     
 
     ///=== SCREEN & BITMAP VARIABLES ===///
@@ -133,7 +137,7 @@ public class GameView extends View {
                 try {
                     URL url = new URL(IMAGE_SOURCES_TXT);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setConnectTimeout(20000); // time out in 20 sec
+                    conn.setConnectTimeout(TIME_TO_TIMEOUT); // time out in 20 sec
                     try {
                         BufferedReader bf = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                         String currLine;
@@ -217,8 +221,11 @@ public class GameView extends View {
         validGuesses = Arrays.copyOfRange(splitURLandGuesses, 1, splitURLandGuesses.length);
 
 
-        Glide.with(GameView.this).asBitmap().load(imageURL).apply(new
-                RequestOptions().override(viewDiameter, viewDiameter)).into(new SimpleTarget<Bitmap>() {
+        // load the image, resize it, and set the bitmaps to it, while skipping the disk cache
+        // (because the user will likely only play each level once).
+        Glide.with(GameView.this).asBitmap().load(imageURL)
+                .apply(new RequestOptions().diskCacheStrategy(DiskCacheStrategy.NONE)
+                .override(viewDiameter, viewDiameter)).into(new SimpleTarget<Bitmap>() {
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
                 // once the image is ready then start the game.
@@ -240,15 +247,17 @@ public class GameView extends View {
 
         GameActivity.hideSoftKeyboard(gameActivity);
 
+        // if the connection failed and they touch the screen then true to load again
         if(connectionFailed) {
             init(gameActivity);
             invalidate();
+            return true;
         }
 
         if(isLoading) {
             gameActivity.mToast.setText(R.string.str_still_loading_image);
             gameActivity.mToast.show();
-            return false;
+            return true;
         }
 
         // whether or not the view has to be redrawn. For example, if the user clicks on a dot
@@ -257,6 +266,12 @@ public class GameView extends View {
 
         switch(event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN: {
+                // if the image is revealed then when they click on it, it should go to the "dots"
+                if(sourceRevealed) {
+                    sourceRevealed = false;
+                    invalidate();
+                    return true;
+                }
                 clicksInARow++;
                 if(clicksInARow > CLICKS_IN_A_ROW_BEFORE_HINT) {
                     gameActivity.mToast.setText(R.string.str_toast_drag_hint);
@@ -272,7 +287,9 @@ public class GameView extends View {
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
-                clicksInARow = 0;
+                // if clicksInARow is already negative, leave it. It means that we do not want to
+                // show the tip toast again this game. Otherwise reset it to 0.
+                clicksInARow = Math.min(clicksInARow, 0);
                 final float x = event.getX();
                 final float y = event.getY();
                 // split the dot at the location (x, y)
@@ -280,7 +297,7 @@ public class GameView extends View {
                 break;
             }
             default: {
-                return false;
+                return true;
             }
         }
 
@@ -298,8 +315,6 @@ public class GameView extends View {
             paint.setTextSize(40);
             canvas.drawText("Click to try again", viewDiameter/2, viewDiameter/2 + 100, paint);
         } else if(isLoading) {
-            // if loading then draw the loading bitmap
-            // canvas.drawBitmap(loadingBmp, 0, 0, null);
             // if loading then draw three dots to show loading
             drawLoadingDots(canvas);
 
@@ -530,13 +545,14 @@ public class GameView extends View {
         return false;
     }
 
-    private void gameOver() {
+    public void gameOver() {
         // show Toast to tell the user what the correct word was
         String toastText = getResources().getString(R.string.str_toast_a_correct_ans_was) + " ";
         toastText += validGuesses[0];
         gameActivity.mToast.setText(toastText);
         gameActivity.mToast.show();
         gameActivity.showNextButton();
+        invalidate();
     }
 
     private void win() {

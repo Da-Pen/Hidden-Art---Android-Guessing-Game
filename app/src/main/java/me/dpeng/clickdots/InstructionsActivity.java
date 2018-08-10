@@ -7,8 +7,6 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.bumptech.glide.request.transition.Transition;
-
 public class InstructionsActivity extends AppCompatActivity{
 
     private ViewPager viewPager;
@@ -17,9 +15,9 @@ public class InstructionsActivity extends AppCompatActivity{
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         if(Utilities.isDarkTheme) {
-            setTheme(R.style.Dark);
+            setTheme(R.style.DarkTheme);
         } else {
-            setTheme(R.style.Light);
+            setTheme(R.style.LightTheme);
         }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_instructions);

@@ -8,18 +8,20 @@
         <!--<item name="android:buttonStyle">@android:style/Widget.Holo.Button.Borderless</item>-->
     <!--</style>-->
 
-    <style name="Dark" parent="Theme.AppCompat.NoActionBar">
+    <style name="DarkTheme" parent="Theme.AppCompat.NoActionBar">
         <item name="android:buttonStyle">@style/DarkButton</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
     </style>
-    <style name="Light" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="LightTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:buttonStyle">@style/LightButton</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
     </style>
 
     <style name="LightButton" parent="@android:style/Widget.Holo.Button.Borderless">
-        <item name="android:textColor">@color/color_menu_text</item>
+        <item name="android:textColor">@color/color_text_light_theme</item>
     </style>
     <style name="DarkButton" parent="@android:style/Widget.Holo.Button.Borderless">
-        <item name="android:textColor">@color/color_menu_text_dark_theme</item>
+        <item name="android:textColor">@color/color_text_dark_theme</item>
     </style>
 
     <style name="WindowAnimationTransition">

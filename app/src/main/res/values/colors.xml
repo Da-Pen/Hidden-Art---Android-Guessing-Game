@@ -9,8 +9,8 @@
     <color name="color_background">#FFF</color>
     <color name="color_background_dark">#000</color>
 
-    <color name="color_menu_text">#000</color>
-    <color name="color_menu_text_dark_theme">#FFF</color>
+    <color name="color_text_light_theme">#000</color>
+    <color name="color_text_dark_theme">#FFF</color>
 
     <color name="color_search_bar">#D8D8D8</color>
     <color name="color_search_bar_text">#595959</color>

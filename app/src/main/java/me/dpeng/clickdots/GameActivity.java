@@ -22,8 +22,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.util.Util;
-
 /**
  * The Activity for the Game. The interface is created here rather than in the XML file. The
  * interface includes back button, score count and give up button across the top, the GameView
@@ -68,9 +66,9 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
         // set the theme to be dark if dark mode is on
         if(Utilities.isDarkTheme) {
-            setTheme(R.style.Dark);
+            setTheme(R.style.DarkTheme);
         } else {
-            setTheme(R.style.Light);
+            setTheme(R.style.LightTheme);
         }
 
         super.onCreate(savedInstanceState);
@@ -354,8 +352,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     public void onDialogPositiveClick(DialogFragment dialog) {
         if(clickedBack) finish();
         else {
-            gameView.toggleSourceImage();
-            showNextButton();
+            gameView.gameOver();
         }
     }
 

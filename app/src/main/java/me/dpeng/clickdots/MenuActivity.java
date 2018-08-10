@@ -39,10 +39,10 @@ public class MenuActivity extends AppCompatActivity {
 
         if(isDarkTheme) {
             //setTheme(R.style.DarkTheme);
-            setTheme(R.style.Dark);
+            setTheme(R.style.DarkTheme);
         } else {
             //setTheme(R.style.LightTheme);
-            setTheme(R.style.Light);
+            setTheme(R.style.LightTheme);
         }
 
         super.onCreate(savedInstanceState);
