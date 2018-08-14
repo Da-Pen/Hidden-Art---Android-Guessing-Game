@@ -18,10 +18,10 @@
     </style>
 
     <style name="LightButton" parent="@android:style/Widget.Holo.Button.Borderless">
-        <item name="android:textColor">@color/color_text_light_theme</item>
+        <item name="android:textColor">?android:colorForeground</item>
     </style>
     <style name="DarkButton" parent="@android:style/Widget.Holo.Button.Borderless">
-        <item name="android:textColor">@color/color_text_dark_theme</item>
+        <item name="android:textColor">?android:colorForeground</item>
     </style>
 
     <style name="WindowAnimationTransition">

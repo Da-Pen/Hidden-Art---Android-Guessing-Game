@@ -3,6 +3,7 @@ package me.dpeng.clickdots;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.TypedValue;
@@ -18,6 +19,10 @@ public abstract class Utilities {
     // the keys used to retrieve the preferences from SharedPreferences
     public static final String KEY_IS_DARK_THEME = "isDarkTheme";
     public static final String KEY_IS_SQUARE_MODE = "isSquareTheme";
+
+    public static final String KEY_LEVEL_NUMBER = "levelNumber";
+    public static final String KEY_LEVEL_PROGRESS = "levelProgress";
+
 
     public static boolean isNetworkAvailable(Context c) {
         ConnectivityManager connectivityManager
@@ -50,5 +55,33 @@ public abstract class Utilities {
         return (int) (dpToPx(context, dp) / context.getResources().getDisplayMetrics().scaledDensity);
     }
 
+    public static int fetchAccentColor(Context context) {
+        TypedValue typedValue = new TypedValue();
+
+        TypedArray a = context.obtainStyledAttributes(typedValue.data, new int[] { R.attr.colorAccent });
+        int color = a.getColor(0, 0);
+        int colorId = a.getResourceId(0, 0);
+
+        a.recycle();
+
+        return colorId;
+    }
+
+    public static int getAttributeColorId(Context context, int attributeId) {
+        TypedValue typedValue = new TypedValue();
+        context.getTheme().resolveAttribute(attributeId, typedValue, true);
+        return typedValue.resourceId;
+    }
+
+    public static int fetchForegroundColor(Context context) {
+        TypedValue typedValue = new TypedValue();
+
+        TypedArray a = context.obtainStyledAttributes(typedValue.data, new int[] { android.R.attr.colorForeground });
+        int color = a.getColor(0, 0);
+
+        a.recycle();
+
+        return color;
+    }
 
 }

@@ -53,7 +53,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_instructions"
-        app:srcCompat="@drawable/square_black" />
+        app:srcCompat="@drawable/vector_square"
+        android:tint="?android:colorForeground"/>
 
     <ImageButton
         android:id="@+id/btn_toggleDarkTheme"
@@ -62,7 +63,8 @@
         app:layout_constraintEnd_toStartOf="@+id/btn_toggleSquareMode"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/btn_toggleSquareMode"
-        app:srcCompat="@drawable/color_switch_black_border" />
+        app:srcCompat="@drawable/vector_toggle_theme"
+        android:tint="?android:colorForeground"/>
 
     <ImageButton
         android:id="@+id/btn_credits"
@@ -71,7 +73,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/btn_toggleSquareMode"
         app:layout_constraintTop_toTopOf="@+id/btn_toggleSquareMode"
-        app:srcCompat="@drawable/info_white" />
+        app:srcCompat="@drawable/vector_info"
+        android:tint="?android:colorForeground"/>
 
 
 </android.support.constraint.ConstraintLayout>

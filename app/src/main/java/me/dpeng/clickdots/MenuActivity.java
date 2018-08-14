@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.transition.Fade;
 import android.transition.Scene;
@@ -102,7 +103,7 @@ public class MenuActivity extends AppCompatActivity {
         editor.putBoolean(Utilities.KEY_IS_SQUARE_MODE, Utilities.isSquareMode);
         editor.apply();
 
-        // let the user know that square mode is on or off via Toast
+        // let the user know that vector_square mode is on or off via Toast
 
         mToast.setText(Utilities.isSquareMode ? getResources().getString(R.string.str_square_mode_on):getResources().getString(R.string.str_square_mode_off));
         mToast.show();
@@ -131,36 +132,13 @@ public class MenuActivity extends AppCompatActivity {
      * on then the middle image will be a circle after this function is run.
      */
     public void recalculateButtonResources() {
-        // recalculate btn_toggleDarkTheme image resource
-        ImageButton toggleDarkThemeButton = findViewById(R.id.btn_toggleDarkTheme);
-        if(Utilities.isDarkTheme) {
-            toggleDarkThemeButton.setImageResource(R.drawable.color_switch_white_border);
-        } else {
-            toggleDarkThemeButton.setImageResource(R.drawable.color_switch_black_border);
-        }
 
         // recalculate btn_toggleSquareMode image resource
         ImageButton toggleSquareModeButton = findViewById(R.id.btn_toggleSquareMode);
         if(Utilities.isSquareMode) {
-            if(Utilities.isDarkTheme) {
-                toggleSquareModeButton.setImageResource(R.drawable.square_white);
-            } else {
-                toggleSquareModeButton.setImageResource(R.drawable.square_black);
-            }
+            toggleSquareModeButton.setImageResource(R.drawable.vector_square);
         } else {
-            if(Utilities.isDarkTheme) {
-                toggleSquareModeButton.setImageResource(R.drawable.circle_white);
-            } else {
-                toggleSquareModeButton.setImageResource(R.drawable.circle_black);
-            }
-        }
-
-        // recalculate btn_credits image resource
-        ImageButton creditsButton = findViewById(R.id.btn_credits);
-        if(Utilities.isDarkTheme) {
-            creditsButton.setImageResource(R.drawable.info_white);
-        } else {
-            creditsButton.setImageResource(R.drawable.info_black);
+            toggleSquareModeButton.setImageResource(R.drawable.vector_circle);
         }
 
     }
@@ -169,4 +147,5 @@ public class MenuActivity extends AppCompatActivity {
         Intent intent = new Intent(this, CreditsActivity.class);
         startActivity(intent);
     }
+
 }

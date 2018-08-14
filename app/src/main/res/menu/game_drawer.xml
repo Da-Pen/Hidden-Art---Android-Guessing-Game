@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_toggle_theme"
+        android:icon="@drawable/vector_toggle_theme"
+        android:title="@string/str_nav_toggle_theme" />
+    <item
+        android:id="@+id/nav_toggle_square_mode"
+        android:icon="@drawable/vector_circle"
+        android:title="@string/str_nav_toggle_square_mode" />
+    <item
+        android:id="@+id/nav_screenshot"
+        android:icon="@drawable/vector_camera"
+        android:title="@string/str_nav_screenshot" />
+    <item
+        android:id="@+id/nav_resign"
+        android:icon="@drawable/vector_flag"
+        android:title="@string/str_nav_resign" />
+
+</menu>

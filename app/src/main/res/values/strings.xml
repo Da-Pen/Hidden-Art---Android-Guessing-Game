@@ -31,5 +31,12 @@
     <string name="str_toast_incorrect">INCORRECT:</string>
     <string name="str_toast_guess_left">guess left!</string>
     <string name="str_toast_guesses_left">guesses left!</string>
+    <string name="str_could_not_connect_to_dropbox">Could not connect to Dropbox.</string>
+    <string name="str_click_to_try_again">Click to try again</string>
+    <string name="txt_credits">Creator: Daniel P.\nThanks to Aaron C. for suggesting to do a side project\nImages from pexels.com\nInspired by koalastothemax.com</string>
+    <string name="str_nav_toggle_theme">Switch Theme</string>
+    <string name="str_nav_toggle_square_mode">Toggle Square Mode</string>
+    <string name="str_nav_screenshot">Screenshot</string>
+    <string name="str_nav_resign">Give up</string>
 
 </resources>

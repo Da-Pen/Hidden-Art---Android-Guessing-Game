@@ -16,7 +16,7 @@ public class Dot implements Comparable<Dot>{
     private int x;
     private int y;
     private int diameter;
-    private int radius; // used to draw things faster
+    private int radius; // not necessary (since we have diameter) but used to draw things faster
     private int color;
 
     public Dot(int x, int y, int diameter, int color) {
@@ -35,9 +35,7 @@ public class Dot implements Comparable<Dot>{
         } else {
             if(clearBackGround) {
                 // clear the background if needed
-                Paint clearPaint = new Paint();
-                clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                canvas.drawRect(x, y, x + diameter, y + diameter, clearPaint);
+                canvas.drawRect(x, y, x + diameter, y + diameter, GameView.clearPaint);
             }
             // draw the actual circle
             paint.setColor(this.color);
@@ -101,4 +99,11 @@ public class Dot implements Comparable<Dot>{
             return this.x > o.getX() ? 1 : (this.x < o.getX() ? -1 : 0);
         }
     }
+
+    @Override
+    public String toString() {
+        return x + "," + y + "," + diameter + "," + color + ";";
+    }
 }
+
+

@@ -3,10 +3,14 @@ package me.dpeng.clickdots;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.preference.PreferenceManager;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
@@ -43,10 +47,10 @@ public class GameView extends View {
 
     ///=== SCREEN & BITMAP VARIABLES ===///
     private Paint paint = new Paint();
+    public static Paint clearPaint;
     // a list of all the image options. We keep the entire list because so that when the user
     // clicks "next" after completing a game then we do not have to connect to Dropbox again
     private ArrayList<String> imageOptions;
-    private int choiceIndex; // stores the index of imageOptions that we are using for the current game
     // an online txt file containing information for where to find the images
     private final String IMAGE_SOURCES_TXT = "https://dl.dropboxusercontent.com/s/h4ayiu9tlaz6xyh/imageSourceURLs.txt?dl=0";
     // includes the URL of the image and valid guesses in the format:
@@ -73,6 +77,7 @@ public class GameView extends View {
     private Bitmap gameBmp;
     private Canvas gameCanvas;
 
+
     ///=== END SCREEN & BITMAP VARIABLES ===///
 
 
@@ -90,7 +95,7 @@ public class GameView extends View {
     private int lastTouchX;
     private int lastTouchY;
     private int numClicks = 0; // tracks the number of clicks the user has made (i.e their score)
-    private boolean isLoading = true;
+    public boolean isLoading = true;
     private String[] validGuesses; // a list of all guesses that are considered correct
     ArrayList<Dot> dots; // list of all the dots
     final private static int START_GUESSES = 3; // the total # of guesses that the user gets
@@ -103,6 +108,9 @@ public class GameView extends View {
     ///=== END GAME LOGIC VARIABLES ===///
 
 
+    //temp
+    public int sideMargin = 0;
+
 
     ///=== CONSTRUCTORS ===///
 
@@ -112,16 +120,30 @@ public class GameView extends View {
 
     public GameView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
+        TypedArray a = context.getTheme().obtainStyledAttributes(
+                attributeSet,
+                R.styleable.GameView,
+                0, 0);
+        try {
+            sideMargin = a.getInteger(R.styleable.GameView_sideMargin, 0);
+        } finally {
+            a.recycle();
+        }
+
     }
 
     public GameView(Context context, ConstraintLayout constraintLayout) {
         this(context);
-        init(context);
     }
 
 
     // initialises the variables needed for the game to start
-    private void init(Context context) {
+    public void init(Context context) {
+
+
+        clearPaint = new Paint();
+        clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+
         connectionFailed = false;
         gameActivity = (GameActivity) context;
 
@@ -159,7 +181,6 @@ public class GameView extends View {
                         });
 
                     } catch (Exception e) {
-                        e.printStackTrace();
                         // if the connection failed then let the user know
                         gameActivity.runOnUiThread(new Runnable() {
                             @Override
@@ -171,7 +192,6 @@ public class GameView extends View {
                     }
 
                 } catch (Exception e) {
-                    e.printStackTrace();
                     // if the connection failed then let the user know
                     connectionFailed = true;
                     gameActivity.runOnUiThread(new Runnable() {
@@ -191,7 +211,7 @@ public class GameView extends View {
 
         // get screen dimensions
         DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
-        viewDiameter = dm.widthPixels - GameActivity.SIDE_MARGIN*2;
+        viewDiameter = dm.widthPixels - sideMargin*2;
 
         // calculate the smallest diameter for a Dot before it is unsplittable
         SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / Math.pow(2, MAX_CLICKS)));
@@ -207,23 +227,35 @@ public class GameView extends View {
     public void onImageURLLoaded() {
         isLoading = true;
         sourceRevealed = false;
+        this.numClicks = 0;
+        gameActivity.setNumclicks(0);
         invalidate();
         // choose a random image from the list of images
-        choiceIndex = Utilities.randRange(1, imageOptions.size()) - 1;
-        imageInfo = imageOptions.get(choiceIndex);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(gameActivity);
+        int currLevel = sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, 0);
+        if(currLevel >= imageOptions.size()) {
+            // reset the level to 0 for now if they have completed all of them
+            // TODO add some kind of "play summary" here
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt(Utilities.KEY_LEVEL_NUMBER, 0);
+            editor.apply();
+            currLevel = 0;
+        }
+        imageInfo = imageOptions.get(currLevel);
         // GET THE IMAGE
         // imageInfo is of the format:
         // url,valid Guess 1,valid Guess 2, ...
         // we need to split it to store the real url and the valid guesses.
         String[] splitURLandGuesses = imageInfo.split(",");
         imageURL = splitURLandGuesses[0];
+        imageURL.trim();
 
         validGuesses = Arrays.copyOfRange(splitURLandGuesses, 1, splitURLandGuesses.length);
 
 
         // load the image, resize it, and set the bitmaps to it, while skipping the disk cache
         // (because the user will likely only play each level once).
-        Glide.with(GameView.this).asBitmap().load(imageURL)
+        Glide.with(gameActivity.getApplicationContext()).asBitmap().load(imageURL)
                 .apply(new RequestOptions().diskCacheStrategy(DiskCacheStrategy.NONE)
                 .override(viewDiameter, viewDiameter)).into(new SimpleTarget<Bitmap>() {
             @Override
@@ -311,9 +343,9 @@ public class GameView extends View {
             paint.setColor(Utilities.isDarkTheme ? Color.WHITE : Color.BLACK);
             paint.setTextSize(60);
             paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText("Could not connect to Dropbox.", viewDiameter/2, viewDiameter/2, paint);
+            canvas.drawText(getContext().getString(R.string.str_could_not_connect_to_dropbox), viewDiameter/2, viewDiameter/2, paint);
             paint.setTextSize(40);
-            canvas.drawText("Click to try again", viewDiameter/2, viewDiameter/2 + 100, paint);
+            canvas.drawText(getContext().getString(R.string.str_click_to_try_again), viewDiameter/2, viewDiameter/2 + 100, paint);
         } else if(isLoading) {
             // if loading then draw three dots to show loading
             drawLoadingDots(canvas);
@@ -355,16 +387,19 @@ public class GameView extends View {
             return;
         }
         firstMeasure = false;
-        // make the height of this view the same as its width (i.e make it square)
+        // make the height of this view the same as its width (i.e make it vector_square)
         this.post(new Runnable() {
             @Override
             public void run() {
-                ViewGroup.LayoutParams mParams = GameView.this.getLayoutParams();
+                ConstraintLayout.LayoutParams mParams = (ConstraintLayout.LayoutParams)
+                        GameView.this.getLayoutParams();
                 mParams.height = GameView.this.getWidth();
                 GameView.this.setLayoutParams(mParams);
-                // GameView.this.postInvalidate();
+                // recenter the view on the activity
+                gameActivity.recenterGameView();
             }
         });
+
 
     }
 
@@ -464,7 +499,7 @@ public class GameView extends View {
         // long lastTime = System.currentTimeMillis();
         for(int i = 0; i < len; ++i) {
             Dot dot = dots.get(i);
-            // if the user pressed in that dot's bounding square
+            // if the user pressed in that dot's bounding vector_square
             if(dot.isTouchInside(touchX, touchY)) {
                 if(moving) {
                     // if the user did not "move into" this Dot (i.e their finger was already
@@ -493,14 +528,27 @@ public class GameView extends View {
     // resets the game
     private void onImageLoaded() {
         numClicks = 0;
-        clicksInARow = 0;
-        gameActivity.setNumclicks(0);
         guessesLeft = START_GUESSES;
-        dots = new ArrayList<>();
-        int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
-        // add first dot
-        dots.add(new Dot(0, 0, viewDiameter, avgColor));
-        dots.get(0).draw(gameCanvas, paint, true);
+
+        // get the progress of the level that we saved the last time the app was open.
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(gameActivity);
+        String progress = sharedPreferences.getString(Utilities.KEY_LEVEL_PROGRESS, "");
+
+        // if there was no progress then create the first Dot
+        if(progress.isEmpty()) {
+            dots = new ArrayList<>();
+            int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
+            // add first dot
+            dots.add(new Dot(0, 0, viewDiameter, avgColor));
+            dots.get(0).draw(gameCanvas, paint, true);
+        } else {// if there was some progress saved then load it
+            parseDots(progress);
+            // draw all the dots
+            clearGameCanvas();
+            for(Dot d: dots) {
+                d.draw(gameCanvas, paint, false);
+            }
+        }
         invalidate();
     }
 
@@ -564,4 +612,53 @@ public class GameView extends View {
         invalidate();
     }
 
+    /**
+     * Returns a String representation of the dots list
+     * @return a String representation of the dots list
+     */
+    public String dotsToString() {
+        String str = "";
+        for(Dot d: dots) {
+            str += d.toString();
+        }
+        return str;
+    }
+
+
+    /**
+     * Takes a string representation of the dots and parses it and adds the Dots to the dots list
+     * @param s the String to parse
+     */
+    private void parseDots(String s) {
+        // clear the old dots list and initialize it if it is null
+        dots = new ArrayList<>();
+        String[] dotsStrList = s.split(";");
+        for(String dotsStr: dotsStrList) {
+            String[] properties = dotsStr.split(",");
+            dots.add(new Dot(
+                    Integer.parseInt(properties[0]), // x
+                    Integer.parseInt(properties[1]), // y
+                    Integer.parseInt(properties[2]), // diameter
+                    Integer.parseInt(properties[3]))); // color
+        }
+    }
+
+
+    private void clearGameCanvas() {
+        gameCanvas.drawRect(gameCanvas.getClipBounds(), clearPaint);
+    }
+
+    // Redraw all the dots as squares / vice versa
+    public void toggleSquareMode() {
+        if(isLoading) {
+            // if loading then redraw the loading dots (as squares or circles)
+            invalidate();
+        } else {
+            clearGameCanvas();
+            for (Dot d : dots) {
+                d.draw(gameCanvas, paint, false);
+            }
+        }
+
+    }
 }

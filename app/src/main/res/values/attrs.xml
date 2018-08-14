@@ -1,3 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <declare-styleable name="GameView">
+        <attr name="sideMargin" format="integer" />
+    </declare-styleable>
+    
 </resources>
