@@ -22,6 +22,7 @@ public abstract class Utilities {
 
     public static final String KEY_LEVEL_NUMBER = "levelNumber";
     public static final String KEY_LEVEL_PROGRESS = "levelProgress";
+    public static final String KEY_SCORE = "score";
 
 
     public static boolean isNetworkAvailable(Context c) {

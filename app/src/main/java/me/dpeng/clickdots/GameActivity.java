@@ -2,10 +2,9 @@ package me.dpeng.clickdots;
 
 import android.app.Activity;
 import android.app.DialogFragment;
-import android.app.Fragment;
-import android.app.FragmentTransaction;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -16,10 +15,8 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.transition.TransitionManager;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +25,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +35,10 @@ import android.widget.Toast;
  * across the bottom.
  */
 public class GameActivity extends AppCompatActivity implements ConfirmResignDialogFragment.DialogListener, NavigationView.OnNavigationItemSelectedListener{
+
+    public Resources res;
+
+    public GameViewModel model;
 
     // space at the sides of the screen (we need some space because if there is none then it is
     // difficult for the user to click the dots at the edge of the screen.
@@ -51,8 +51,17 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     private Button btn_guess;
 
 
-    private TextView tv_numClicks; // TextView to keep track of the # of clicks the user has made
+    public SharedPreferences sharedPreferences;
+    public SharedPreferences.Editor prefEditor;
+
+    private TextView tv_score; // TextView to keep track of the # of clicks the user has made
     public boolean gameIsOver = false; // if the game is over (this can be if the user won OR lost
+
+    private NavigationView nav;
+    private Menu menu;
+    private MenuItem toggleSquareModeItem;
+    private View headerView;
+    private TextView tv_levelNumber;
 
     public Toast mToast;
 
@@ -62,6 +71,12 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
+        res = getResources();
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        prefEditor = sharedPreferences.edit();
 
         // create global Toast
         mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
@@ -77,14 +92,34 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
 
         super.onCreate(savedInstanceState);
+
+
+
+        model = ViewModelProviders.of(this).get(GameViewModel.class);
+
+
         // set the layout
         setContentView(R.layout.activity_game);
         // get the layout
         layout = findViewById(R.id.game_layout);
 
         // initialize the listener for the drawer
-        NavigationView v = findViewById(R.id.nav_view);
-        v.setNavigationItemSelectedListener(this);
+        nav = findViewById(R.id.nav_view);
+        nav.setNavigationItemSelectedListener(this);
+
+        // set the "square mode" button as the right one (square or circle)
+        menu = nav.getMenu();
+        toggleSquareModeItem = menu.findItem(R.id.nav_toggle_square_mode);
+
+        headerView = nav.getHeaderView(0);
+        tv_levelNumber = headerView.findViewById(R.id.tv_levelNumber);
+        // set the name as "Level x", adding 1 because the number stored in sharedPref is the index
+        tv_levelNumber.setText(String.format(res.getString(R.string.str_nav_level),
+                sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, 0) + 1));
+
+        toggleSquareModeItem.setIcon(
+                Utilities.isSquareMode ? R.drawable.vector_square : R.drawable.vector_circle
+        );
 
         gameView = findViewById(R.id.gameView);
         ConstraintLayout.LayoutParams gameViewLayout = new ConstraintLayout.LayoutParams(
@@ -92,9 +127,22 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         gameViewLayout.leftMargin = gameView.sideMargin;
         gameViewLayout.rightMargin = gameView.sideMargin;
         gameView.setLayoutParams(gameViewLayout);
+
+        // initialize the model's variables if they have not already been initiated
+//        if(model.bitmap == null) {
+//            model.bitmap = Bitmap.createBitmap(gameView.viewDiameter, gameView.viewDiameter, Bitmap.Config.ARGB_8888);
+//        }
+//        if(model.dots == null) {
+//            model.dots = new ArrayList<>();
+//        }
+
         gameView.init(this);
 
-        tv_numClicks = findViewById(R.id.tv_numClicks);
+        tv_score = findViewById(R.id.tv_score);
+        int score = sharedPreferences.getInt(Utilities.KEY_SCORE, 0);
+        tv_score.setText("" + score);
+        gameView.score = score;
+
         guessBarLayout = findViewById(R.id.guess_bar);
 
         et_guess = findViewById(R.id.editText);
@@ -106,7 +154,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
                     String guess = et_guess.getText().toString();
                     if(guess.isEmpty()) {
-                        mToast.setText(R.string.str_empty_guess_warn_toast);
+                        mToast.setText(R.string.str_toast_empty_guess_warn);
                         mToast.show();
                     } else {
                         // hide the keyboard
@@ -141,14 +189,12 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     // opposite of showGuessBar()
     public void showNextButton() {
         // set the level number in SharedPreferences
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         // get the last level number
         int lastLevel = sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, -1);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt(Utilities.KEY_LEVEL_NUMBER, lastLevel + 1);
+        prefEditor.putInt(Utilities.KEY_LEVEL_NUMBER, lastLevel + 1);
         // clear the level progress
-        editor.putString(Utilities.KEY_LEVEL_PROGRESS, "");
-        editor.apply();
+        prefEditor.putString(Utilities.KEY_LEVEL_PROGRESS, "");
+        prefEditor.apply();
 
         // change the GUESS button to the NEXT button
         TransitionManager.beginDelayedTransition(layout);
@@ -176,8 +222,8 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
     // sets the number of clicks. When the user clicks a dot then this is called and it
     // updates the counter at the top of the screen.
-    public void setNumclicks(int numClicks) {
-        tv_numClicks.setText("" + numClicks);
+    public void setScore(int score) {
+        tv_score.setText("" + score);
     }
 
     // what to do if the user clicks "CONFIRM" on the dialog "Are you sure you want to give up?"
@@ -193,6 +239,12 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     }
 
     private void nextLevel() {
+        // change the Level in the navigation bar to the next level
+        tv_levelNumber.setText(String.format(res.getString(R.string.str_nav_level),
+                sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, 0) + 1));
+        // change the model values back to their defaults
+        model.bitmap = null;
+        model.dots = null;
 
         // set the next button back to the guess bar
         showGuessBar();
@@ -215,11 +267,9 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         switch(item.getItemId()) {
             case R.id.nav_toggle_square_mode: {
                 // change the value stored in SharedPreferences
-                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
                 Utilities.isSquareMode = !sharedPreferences.getBoolean(Utilities.KEY_IS_SQUARE_MODE, false);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putBoolean(Utilities.KEY_IS_SQUARE_MODE, Utilities.isSquareMode);
-                editor.apply();
+                prefEditor.putBoolean(Utilities.KEY_IS_SQUARE_MODE, Utilities.isSquareMode);
+                prefEditor.apply();
 
                 // change the icon
                 item.setIcon(Utilities.isSquareMode ?
@@ -238,25 +288,39 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
             case R.id.nav_toggle_theme: {
                 // save the level progress in SharedPreferences
-                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
                 // if the game has started and not finished then we save the current progress
-                if(!gameView.sourceRevealed && !gameView.isLoading) {
-                    editor.putString(Utilities.KEY_LEVEL_PROGRESS, gameView.dotsToString());
-                } else {
-                    // otherwise clear the string so that the next time we play it does not load the wrong thing
-                    editor.putString(Utilities.KEY_LEVEL_PROGRESS, "");
-                }
+//                if(!gameView.sourceRevealed && !gameView.isLoading) {
+//                    prefEditor.putString(Utilities.KEY_LEVEL_PROGRESS, gameView.dotsToString());
+//                } else {
+//                    // otherwise clear the string so that the next time we play it does not load the wrong thing
+//                    prefEditor.putString(Utilities.KEY_LEVEL_PROGRESS, "");
+//                }
 
                 // change the theme
                 Utilities.isDarkTheme = !sharedPreferences.getBoolean(Utilities.KEY_IS_DARK_THEME, false);
-                editor.putBoolean(Utilities.KEY_IS_DARK_THEME, Utilities.isDarkTheme);
-                editor.apply();
+                prefEditor.putBoolean(Utilities.KEY_IS_DARK_THEME, Utilities.isDarkTheme);
+                if(gameView != null && !gameView.sourceRevealed && !gameView.isLoading)  {
+                    prefEditor.putInt(Utilities.KEY_SCORE, gameView.score);
+                } else {
+                    prefEditor.putInt(Utilities.KEY_SCORE, 0);
+                }
+                prefEditor.apply();
+//
+                System.out.println(model.bitmap);
+                System.out.println("");
+//                // save the level progress in the ViewModel
+//                model.dots = gameView.dots;
+//                model.bitmap = gameView.gameBmp;
 
                 // recreate the activity
                 recreate();
             }
         }
+
+        // close the drawer
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        drawerLayout.closeDrawer(findViewById(R.id.nav_view));
+
         return true;
     }
 
@@ -266,25 +330,23 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
      */
     public void backToMenu(View view) {
         // if the game has not been loaded yet then do nothing
-        if(gameView == null) {
-            finish();
-            return;
+        if(gameView != null) {
+            // if the game has started and not finished then we save the current progress
+            if (!gameView.sourceRevealed && !gameView.isLoading) {
+                prefEditor.putString(Utilities.KEY_LEVEL_PROGRESS, gameView.dotsToString());
+                prefEditor.putInt(Utilities.KEY_SCORE, gameView.score);
+            } else {
+                // otherwise clear the string so that the next time we play it does not load the wrong thing
+                prefEditor.putString(Utilities.KEY_LEVEL_PROGRESS, "");
+                prefEditor.putInt(Utilities.KEY_SCORE, 0);
+            }
+
+            prefEditor.apply();
         }
-
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-
-        // if the game has started and not finished then we save the current progress
-        if(!gameView.sourceRevealed && !gameView.isLoading) {
-            editor.putString(Utilities.KEY_LEVEL_PROGRESS, gameView.dotsToString());
-        } else {
-            // otherwise clear the string so that the next time we play it does not load the wrong thing
-            editor.putString(Utilities.KEY_LEVEL_PROGRESS, "");
-        }
-
-        editor.apply();
 
         finish();
+        Intent intent = new Intent(this, MenuActivity.class);
+        startActivity(intent);
 
 //        FragmentTransaction ft = getFragmentManager().beginTransaction();
 //        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
@@ -317,7 +379,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         // hide the keyboard
         String guess = et_guess.getText().toString();
         if(guess.isEmpty()) {
-            mToast.setText(R.string.str_empty_guess_warn_toast);
+            mToast.setText(R.string.str_toast_empty_guess_warn);
             mToast.show();
         } else {
             hideSoftKeyboard(GameActivity.this);

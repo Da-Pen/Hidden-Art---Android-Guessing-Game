@@ -3,5 +3,5 @@
     <declare-styleable name="GameView">
         <attr name="sideMargin" format="integer" />
     </declare-styleable>
-    
+    <attr name="themeName" format="string"></attr>
 </resources>

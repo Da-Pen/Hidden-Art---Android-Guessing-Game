@@ -15,6 +15,7 @@
     <style name="LightTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:buttonStyle">@style/LightButton</item>
         <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
+        <item name="themeName"></item>
     </style>
 
     <style name="LightButton" parent="@android:style/Widget.Holo.Button.Borderless">

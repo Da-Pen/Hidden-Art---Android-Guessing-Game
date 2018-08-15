@@ -22,7 +22,12 @@ public class MenuActivity extends AppCompatActivity {
     public static final String IMAGE = "me.dpeng.clickdots.IMAGE";
     public static final String IMAGE_404 = "https://pbs.twimg.com/profile_images/610486974990913536/5MdbcHvF.png";
     private Toast mToast;
+    private SharedPreferences preferences;
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,18 +36,13 @@ public class MenuActivity extends AppCompatActivity {
 
         // determine and apply the app's theme color
         // find preferences file
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean isDarkTheme = preferences.getBoolean(Utilities.KEY_IS_DARK_THEME, false);
-        boolean isSquareMode = preferences.getBoolean(Utilities.KEY_IS_SQUARE_MODE, false);
-        // save the boolean in an application-wide variable so it can easily be accessed in other activities
-        Utilities.isDarkTheme = isDarkTheme;
-        Utilities.isSquareMode = isSquareMode;
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        Utilities.isDarkTheme = preferences.getBoolean(Utilities.KEY_IS_DARK_THEME, false);
+        Utilities.isSquareMode = preferences.getBoolean(Utilities.KEY_IS_SQUARE_MODE, false);
 
-        if(isDarkTheme) {
-            //setTheme(R.style.DarkTheme);
+        if(Utilities.isDarkTheme) {
             setTheme(R.style.DarkTheme);
         } else {
-            //setTheme(R.style.LightTheme);
             setTheme(R.style.LightTheme);
         }
 
@@ -144,6 +144,7 @@ public class MenuActivity extends AppCompatActivity {
     }
 
     public void goToCredits(View view) {
+        finish();
         Intent intent = new Intent(this, CreditsActivity.class);
         startActivity(intent);
     }

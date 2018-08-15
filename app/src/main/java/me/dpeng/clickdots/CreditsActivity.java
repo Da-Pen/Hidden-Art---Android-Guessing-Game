@@ -12,7 +12,7 @@ public class CreditsActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_credits);
         TextView text = findViewById(R.id.textView2);
-        text.setText(R.string.txt_credits);
+        text.setText(R.string.str_credits_text);
     }
 
     public void backToMenu(View view) {

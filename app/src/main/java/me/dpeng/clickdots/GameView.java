@@ -1,7 +1,6 @@
 package me.dpeng.clickdots;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -10,15 +9,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.preference.PreferenceManager;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -63,7 +59,7 @@ public class GameView extends View {
     private Bitmap srcBmp;
     // private Bitmap loadingBmp;
     // height of this view, in px
-    private int viewDiameter;
+    public int viewDiameter;
     // since the source image is too large to calculate the average color of, we instead load
     // a compressed version of it (1/RESOLUTION_RATIO of the size) and use that to do calculations
     public final int RESOLUTION_RATIO = 10;
@@ -74,7 +70,6 @@ public class GameView extends View {
     // need to scale it once)
     private boolean firstMeasure = true;
 
-    private Bitmap gameBmp;
     private Canvas gameCanvas;
 
 
@@ -94,10 +89,9 @@ public class GameView extends View {
     public boolean sourceRevealed = false;
     private int lastTouchX;
     private int lastTouchY;
-    private int numClicks = 0; // tracks the number of clicks the user has made (i.e their score)
+    public int score = 0; // tracks the number of clicks the user has made (i.e their score)
     public boolean isLoading = true;
     private String[] validGuesses; // a list of all guesses that are considered correct
-    ArrayList<Dot> dots; // list of all the dots
     final private static int START_GUESSES = 3; // the total # of guesses that the user gets
     private int guessesLeft;
     // used to track how many clicks in a row (and not drags) the user has done. If they have
@@ -148,8 +142,7 @@ public class GameView extends View {
         gameActivity = (GameActivity) context;
 
         // get the SharedPreferences to check if squareMode is on
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(gameActivity);
-        Utilities.isSquareMode = sharedPreferences.getBoolean(Utilities.KEY_IS_SQUARE_MODE, false);
+        Utilities.isSquareMode = gameActivity.sharedPreferences.getBoolean(Utilities.KEY_IS_SQUARE_MODE, false);
 
         // create a thread to get the URL for the image that we want to use
         Thread getImgURLThread = new Thread(new Runnable() {
@@ -217,28 +210,29 @@ public class GameView extends View {
         SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / Math.pow(2, MAX_CLICKS)));
 
 
-        gameBmp = Bitmap.createBitmap(viewDiameter, viewDiameter, Bitmap.Config.ARGB_8888);
-        gameCanvas = new Canvas(gameBmp);
+        if(gameActivity.model.bitmap == null) {
+            gameActivity.model.bitmap = Bitmap.createBitmap(viewDiameter, viewDiameter, Bitmap.Config.ARGB_8888);
+        }
+        gameCanvas = new Canvas(gameActivity.model.bitmap);
 
 
     }
 
     // gets the valid guesses, loads the image into the source Bitmap, and starts the game
     public void onImageURLLoaded() {
+        if(gameActivity.model.bitmap == null) {
+            gameActivity.model.bitmap = Bitmap.createBitmap(viewDiameter, viewDiameter, Bitmap.Config.ARGB_8888);
+        }
         isLoading = true;
         sourceRevealed = false;
-        this.numClicks = 0;
-        gameActivity.setNumclicks(0);
         invalidate();
         // choose a random image from the list of images
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(gameActivity);
-        int currLevel = sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, 0);
+        int currLevel = gameActivity.sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, 0);
         if(currLevel >= imageOptions.size()) {
             // reset the level to 0 for now if they have completed all of them
             // TODO add some kind of "play summary" here
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putInt(Utilities.KEY_LEVEL_NUMBER, 0);
-            editor.apply();
+            gameActivity.prefEditor.putInt(Utilities.KEY_LEVEL_NUMBER, 0);
+            gameActivity.prefEditor.apply();
             currLevel = 0;
         }
         imageInfo = imageOptions.get(currLevel);
@@ -287,7 +281,7 @@ public class GameView extends View {
         }
 
         if(isLoading) {
-            gameActivity.mToast.setText(R.string.str_still_loading_image);
+            gameActivity.mToast.setText(R.string.str_toast_still_loading_image);
             gameActivity.mToast.show();
             return true;
         }
@@ -356,7 +350,7 @@ public class GameView extends View {
 
         } else {
             // otherwise draw all the dots
-            canvas.drawBitmap(gameBmp, 0, 0, null);
+            canvas.drawBitmap(gameActivity.model.bitmap, 0, 0, null);
 
         }
 
@@ -452,33 +446,33 @@ public class GameView extends View {
             if(!gameActivity.gameIsOver) {
                 // if the game is already over, the user can continue to click without
                 // increasing their score
-                numClicks++;
-                gameActivity.setNumclicks(numClicks);
+                score++;
+                gameActivity.setScore(score);
             }
             // REMOVE THE OLD DOT
-            dots.remove(index);
-            int size = dots.size();
+            gameActivity.model.dots.remove(index);
+            int size = gameActivity.model.dots.size();
             // SPLIT THE DOT INTO FOUR DOTS
             // Top left dot
             int rad = (int) Math.round(((float) dot.getDiameter()) / 2.0);
             int c = getAvgColor(dot.getX(), dot.getY(), dot.getX() + rad, dot.getY() + rad);
-            dots.add(new Dot(dot.getX(), dot.getY(), rad, c));
-            dots.get(size).draw(gameCanvas, paint, true);
+            gameActivity.model.dots.add(new Dot(dot.getX(), dot.getY(), rad, c));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
             size++;
             // Top right dot
             c = getAvgColor(dot.getX() + rad, dot.getY(), dot.getX() + dot.getDiameter(), dot.getY() + rad);
-            dots.add(new Dot(dot.getX() + rad, dot.getY(), rad, c));
-            dots.get(size).draw(gameCanvas, paint, true);
+            gameActivity.model.dots.add(new Dot(dot.getX() + rad, dot.getY(), rad, c));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
             size++;
             // Bottom left dot
             c = getAvgColor(dot.getX(), dot.getY() + rad, dot.getX() + rad, dot.getY() + dot.getDiameter());
-            dots.add(new Dot(dot.getX(), dot.getY() + rad, rad, c));
-            dots.get(size).draw(gameCanvas, paint, true);
+            gameActivity.model.dots.add(new Dot(dot.getX(), dot.getY() + rad, rad, c));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
             // Bottom right dot
             size++;
             c = getAvgColor(dot.getX() + rad, dot.getY() + rad, dot.getX() + dot.getDiameter(), dot.getY() + dot.getDiameter());
-            dots.add(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c));
-            dots.get(size).draw(gameCanvas, paint, true);
+            gameActivity.model.dots.add(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
             return true;
 
         }
@@ -494,11 +488,11 @@ public class GameView extends View {
      * @return whether or not any dots were actually split
      */
     private boolean splitSelected(float touchX, float touchY, boolean moving) {
-        int len = dots.size();
+        int len = gameActivity.model.dots.size();
 
         // long lastTime = System.currentTimeMillis();
         for(int i = 0; i < len; ++i) {
-            Dot dot = dots.get(i);
+            Dot dot = gameActivity.model.dots.get(i);
             // if the user pressed in that dot's bounding vector_square
             if(dot.isTouchInside(touchX, touchY)) {
                 if(moving) {
@@ -527,28 +521,35 @@ public class GameView extends View {
 
     // resets the game
     private void onImageLoaded() {
-        numClicks = 0;
         guessesLeft = START_GUESSES;
 
-        // get the progress of the level that we saved the last time the app was open.
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(gameActivity);
-        String progress = sharedPreferences.getString(Utilities.KEY_LEVEL_PROGRESS, "");
+        gameCanvas = new Canvas(gameActivity.model.bitmap);
 
-        // if there was no progress then create the first Dot
-        if(progress.isEmpty()) {
-            dots = new ArrayList<>();
-            int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
-            // add first dot
-            dots.add(new Dot(0, 0, viewDiameter, avgColor));
-            dots.get(0).draw(gameCanvas, paint, true);
-        } else {// if there was some progress saved then load it
-            parseDots(progress);
-            // draw all the dots
-            clearGameCanvas();
-            for(Dot d: dots) {
-                d.draw(gameCanvas, paint, false);
+        // use the viewmodel to get the progress from last time, if applicable
+//        dots = gameActivity.model.dots;
+        // if the model has content then also load the gameBmp
+        if(gameActivity.model.dots != null && !gameActivity.model.dots.isEmpty()) {
+            //gameBmp = gameActivity.model.bitmap;
+        } else {
+            // get the progress of the level that we saved the last time the app was open.
+            String progress = gameActivity.sharedPreferences.getString(Utilities.KEY_LEVEL_PROGRESS, "");
+            // if there was no progress then create the first Dot
+            if(progress.isEmpty()) {
+                gameActivity.model.dots = new ArrayList<>();
+                int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
+                // add first dot
+                gameActivity.model.dots.add(new Dot(0, 0, viewDiameter, avgColor));
+                gameActivity.model.dots.get(0).draw(gameCanvas, paint, true);
+            } else {// if there was some progress saved then load it
+                parseDots(progress);
+                // draw all the dots
+                clearGameCanvas();
+                for(Dot d: gameActivity.model.dots) {
+                    d.draw(gameCanvas, paint, false);
+                }
             }
         }
+
         invalidate();
     }
 
@@ -559,7 +560,7 @@ public class GameView extends View {
         // make sure the image has already loaded
         if(isLoading) {
             // show toast to notify the user that the image has not loaded yet
-            gameActivity.mToast.setText(R.string.str_please_wait_load);
+            gameActivity.mToast.setText(R.string.str_toast_please_wait_load);
             gameActivity.mToast.show();
             return false;
         }
@@ -584,10 +585,9 @@ public class GameView extends View {
         }
 
         // if the user guessed wrong and still has some lives left then let them know how many
-        String toastText = getResources().getString(R.string.str_toast_incorrect)
-                + " " + guessesLeft + " ";
-        if(guessesLeft == 1) toastText += getContext().getString(R.string.str_toast_guess_left);
-        else toastText += getContext().getString(R.string.str_toast_guesses_left);
+        String toastText = gameActivity.res.getQuantityString(R.plurals.str_toast_guesses_left, guessesLeft, guessesLeft);
+       // if(guessesLeft == 1) toastText += getContext().getString(R.string.str_toast_guess_left);
+       // else toastText += getContext().getString(R.string.str_toast_guesses_left);
         gameActivity.mToast.setText(toastText);
         gameActivity.mToast.show();
         return false;
@@ -595,7 +595,7 @@ public class GameView extends View {
 
     public void gameOver() {
         // show Toast to tell the user what the correct word was
-        String toastText = getResources().getString(R.string.str_toast_a_correct_ans_was) + " ";
+        String toastText = gameActivity.res.getString(R.string.str_toast_a_correct_ans_was) + " ";
         toastText += validGuesses[0];
         gameActivity.mToast.setText(toastText);
         gameActivity.mToast.show();
@@ -618,7 +618,7 @@ public class GameView extends View {
      */
     public String dotsToString() {
         String str = "";
-        for(Dot d: dots) {
+        for(Dot d: gameActivity.model.dots) {
             str += d.toString();
         }
         return str;
@@ -631,11 +631,11 @@ public class GameView extends View {
      */
     private void parseDots(String s) {
         // clear the old dots list and initialize it if it is null
-        dots = new ArrayList<>();
+        gameActivity.model.dots = new ArrayList<>();
         String[] dotsStrList = s.split(";");
         for(String dotsStr: dotsStrList) {
             String[] properties = dotsStr.split(",");
-            dots.add(new Dot(
+            gameActivity.model.dots.add(new Dot(
                     Integer.parseInt(properties[0]), // x
                     Integer.parseInt(properties[1]), // y
                     Integer.parseInt(properties[2]), // diameter
@@ -655,7 +655,7 @@ public class GameView extends View {
             invalidate();
         } else {
             clearGameCanvas();
-            for (Dot d : dots) {
+            for (Dot d : gameActivity.model.dots) {
                 d.draw(gameCanvas, paint, false);
             }
         }
