@@ -68,11 +68,15 @@ public class MenuActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void instructions(View view) {
+    public void goToInstructions(View view) {
         Intent intent = new Intent(this, InstructionsActivity.class);
         startActivity(intent);
     }
 
+    public void goToCredits(View view) {
+        Intent intent = new Intent(this, CreditsActivity.class);
+        startActivity(intent);
+    }
 
 
     /**
@@ -143,10 +147,6 @@ public class MenuActivity extends AppCompatActivity {
 
     }
 
-    public void goToCredits(View view) {
-        finish();
-        Intent intent = new Intent(this, CreditsActivity.class);
-        startActivity(intent);
-    }
+
 
 }

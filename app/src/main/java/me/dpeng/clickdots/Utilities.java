@@ -1,13 +1,18 @@
 package me.dpeng.clickdots;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.media.MediaScannerConnection;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.Environment;
+import android.util.Log;
 import android.util.TypedValue;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Random;
 
 
@@ -17,12 +22,24 @@ public abstract class Utilities {
     public static boolean isSquareMode = false;
 
     // the keys used to retrieve the preferences from SharedPreferences
-    public static final String KEY_IS_DARK_THEME = "isDarkTheme";
-    public static final String KEY_IS_SQUARE_MODE = "isSquareTheme";
+    // settings
+    public static final String KEY_IS_DARK_THEME = "id";
+    public static final String KEY_IS_SQUARE_MODE = "is";
 
-    public static final String KEY_LEVEL_NUMBER = "levelNumber";
-    public static final String KEY_LEVEL_PROGRESS = "levelProgress";
-    public static final String KEY_SCORE = "score";
+    // info from the last level
+    public static final String KEY_LEVEL_NUMBER = "ln";
+    //
+    public static final String KEY_LEVEL_PROGRESS = "lp";
+    public static final String KEY_IS_GAME_OVER = "go";
+    public static final String KEY_GUESSES_LEFT = "gl";
+    public static final String KEY_GUESSES_BAR_TEXT = "gt";
+    public static final String KEY_SCORE = "s";
+
+    // whether or not the info about the last game is stored in sharedPref
+    // (it could also be stored in a ViewModel)
+    public static final String KEY_IS_INFO_IN_SHARED_PREF = "i";
+
+
 
 
     public static boolean isNetworkAvailable(Context c) {
@@ -83,6 +100,48 @@ public abstract class Utilities {
         a.recycle();
 
         return color;
+    }
+
+    /* Checks if external storage is available for read and write */
+    public static boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static void saveImageToExternalStorage(Context context, Bitmap finalBitmap) {
+        String root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+        File myDir = new File(root + "/saved_images/");
+        myDir.mkdirs();
+        Random generator = new Random();
+        int n = 10000;
+        n = generator.nextInt(n);
+        String fname = "Image-" + n + ".jpg";
+        File file = new File(myDir, fname);
+
+        try {
+            FileOutputStream out = new FileOutputStream(file);
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            out.close();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        // Tell the media scanner about the new file so that it is
+        // immediately available to the user.
+        MediaScannerConnection.scanFile(context, new String[] { file.toString() }, null,
+                new MediaScannerConnection.OnScanCompletedListener() {
+                    public void onScanCompleted(String path, Uri uri) {
+                        Log.i("ExternalStorage", "Scanned " + path + ":");
+                        Log.i("ExternalStorage", "-> uri=" + uri);
+                    }
+                });
+
     }
 
 }

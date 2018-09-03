@@ -15,6 +15,7 @@ import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -85,19 +86,18 @@ public class GameView extends View {
     // SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / 2^MAX_CLICKS)));
     // It is calculated when the game is initialised.
     private int SMALLEST_DIAMETER;
-    // whether or not the user has sourceRevealed the source image
-    public boolean sourceRevealed = false;
+    // whether or not the user has gameActivity.model.sourceRevealed the source image
     private int lastTouchX;
     private int lastTouchY;
     public int score = 0; // tracks the number of clicks the user has made (i.e their score)
     public boolean isLoading = true;
     private String[] validGuesses; // a list of all guesses that are considered correct
-    final private static int START_GUESSES = 3; // the total # of guesses that the user gets
-    private int guessesLeft;
+    final public static int START_GUESSES = 3; // the total # of guesses that the user gets
+    public int guessesLeft;
     // used to track how many clicks in a row (and not drags) the user has done. If they have
     // clicked many times, show a Toast with a hint telling them that they can drag their finger
     private int clicksInARow;
-    private static final int CLICKS_IN_A_ROW_BEFORE_HINT = 15; // # of clicks before showing drag hint
+    private static final int CLICKS_IN_A_ROW_BEFORE_HINT = 8; // # of clicks before showing drag hint
     private boolean connectionFailed;
     ///=== END GAME LOGIC VARIABLES ===///
 
@@ -133,7 +133,6 @@ public class GameView extends View {
 
     // initialises the variables needed for the game to start
     public void init(Context context) {
-
 
         clearPaint = new Paint();
         clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
@@ -212,6 +211,7 @@ public class GameView extends View {
 
         if(gameActivity.model.bitmap == null) {
             gameActivity.model.bitmap = Bitmap.createBitmap(viewDiameter, viewDiameter, Bitmap.Config.ARGB_8888);
+            gameActivity.model.sourceRevealed = false;
         }
         gameCanvas = new Canvas(gameActivity.model.bitmap);
 
@@ -224,10 +224,12 @@ public class GameView extends View {
             gameActivity.model.bitmap = Bitmap.createBitmap(viewDiameter, viewDiameter, Bitmap.Config.ARGB_8888);
         }
         isLoading = true;
-        sourceRevealed = false;
+        gameActivity.model.sourceRevealed = false;
+
         invalidate();
-        // choose a random image from the list of images
+        // load the image for this current level
         int currLevel = gameActivity.sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, 0);
+        score = gameActivity.sharedPreferences.getInt(Utilities.KEY_SCORE, 0);
         if(currLevel >= imageOptions.size()) {
             // reset the level to 0 for now if they have completed all of them
             // TODO add some kind of "play summary" here
@@ -293,16 +295,18 @@ public class GameView extends View {
         switch(event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN: {
                 // if the image is revealed then when they click on it, it should go to the "dots"
-                if(sourceRevealed) {
-                    sourceRevealed = false;
-                    invalidate();
+                if(gameActivity.model.sourceRevealed) {
+//                    gameActivity.model.sourceRevealed = false;
+//                    invalidate();
                     return true;
                 }
                 clicksInARow++;
                 if(clicksInARow > CLICKS_IN_A_ROW_BEFORE_HINT) {
                     gameActivity.mToast.setText(R.string.str_toast_drag_hint);
+                    gameActivity.mToast.setDuration(Toast.LENGTH_LONG);
                     gameActivity.mToast.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
                     gameActivity.mToast.show();
+                    gameActivity.mToast.setDuration(Toast.LENGTH_SHORT);
                     // don't show the hint again this game
                     clicksInARow = -1000;
                 }
@@ -313,6 +317,10 @@ public class GameView extends View {
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
+                // if the image is revealed then when they click on it, it should go to the "dots"
+                if(gameActivity.model.sourceRevealed) {
+                    return true;
+                }
                 // if clicksInARow is already negative, leave it. It means that we do not want to
                 // show the tip toast again this game. Otherwise reset it to 0.
                 clicksInARow = Math.min(clicksInARow, 0);
@@ -344,7 +352,7 @@ public class GameView extends View {
             // if loading then draw three dots to show loading
             drawLoadingDots(canvas);
 
-        } else if(sourceRevealed) {
+        } else if(gameActivity.model.sourceRevealed) {
             // if the user won or gave up then show the source image
             canvas.drawBitmap(screenSizeBmp, 0, 0, paint);
 
@@ -443,7 +451,7 @@ public class GameView extends View {
         // only split it if there has been less than MAX_CLICKS
 
         if(dot.getDiameter() / 2 > SMALLEST_DIAMETER) {
-            if(!gameActivity.gameIsOver) {
+            if(!gameActivity.isGameOver) {
                 // if the game is already over, the user can continue to click without
                 // increasing their score
                 score++;
@@ -515,40 +523,56 @@ public class GameView extends View {
 
 
     public void toggleSourceImage() {
-        sourceRevealed = !sourceRevealed;
+        gameActivity.model.sourceRevealed = !gameActivity.model.sourceRevealed;
         invalidate();
     }
 
     // resets the game
     private void onImageLoaded() {
-        guessesLeft = START_GUESSES;
+        guessesLeft = gameActivity.sharedPreferences.getInt(Utilities.KEY_GUESSES_LEFT, START_GUESSES);
 
         gameCanvas = new Canvas(gameActivity.model.bitmap);
 
         // use the viewmodel to get the progress from last time, if applicable
-//        dots = gameActivity.model.dots;
         // if the model has content then also load the gameBmp
         if(gameActivity.model.dots != null && !gameActivity.model.dots.isEmpty()) {
             //gameBmp = gameActivity.model.bitmap;
+            if(gameActivity.sharedPreferences.getBoolean(Utilities.KEY_IS_GAME_OVER, false)) {
+                gameActivity.isGameOver = true;
+                gameActivity.model.sourceRevealed = true;
+                gameActivity.showNextButton();
+            }
         } else {
             // get the progress of the level that we saved the last time the app was open.
             String progress = gameActivity.sharedPreferences.getString(Utilities.KEY_LEVEL_PROGRESS, "");
-            // if there was no progress then create the first Dot
-            if(progress.isEmpty()) {
-                gameActivity.model.dots = new ArrayList<>();
-                int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
-                // add first dot
-                gameActivity.model.dots.add(new Dot(0, 0, viewDiameter, avgColor));
-                gameActivity.model.dots.get(0).draw(gameCanvas, paint, true);
+
+            // if they finished the game (won or lost) last time then show the source image
+            if(gameActivity.sharedPreferences.getBoolean(Utilities.KEY_IS_GAME_OVER, false)) {
+                gameActivity.isGameOver = true;
+                gameActivity.model.sourceRevealed = true;
+                gameActivity.showNextButton();
             } else {// if there was some progress saved then load it
-                parseDots(progress);
-                // draw all the dots
-                clearGameCanvas();
-                for(Dot d: gameActivity.model.dots) {
-                    d.draw(gameCanvas, paint, false);
+                // if there was no dots (i.e they just started the new level) then create the first dot
+                if(progress.isEmpty()) {
+                    gameActivity.model.dots = new ArrayList<>();
+                    int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
+                    // add first dot
+                    gameActivity.model.dots.add(new Dot(0, 0, viewDiameter, avgColor));
+                    gameActivity.model.dots.get(0).draw(gameCanvas, paint, true);
+//                    // since the new game started, the game is not "over" anymore
+//                    gameActivity.prefEditor.putBoolean(Utilities.KEY_IS_GAME_OVER, false);
+//                    gameActivity.prefEditor.apply();
+                } else { // if the first dot is already created then load the dots
+                    parseDots(progress);
+                    // draw all the dots
+                    clearGameCanvas();
+                    for (Dot d : gameActivity.model.dots) {
+                        d.draw(gameCanvas, paint, false);
+                    }
                 }
             }
         }
+
 
         invalidate();
     }
@@ -600,6 +624,11 @@ public class GameView extends View {
         gameActivity.mToast.setText(toastText);
         gameActivity.mToast.show();
         gameActivity.showNextButton();
+        gameActivity.model.sourceRevealed = true;
+
+        // save the score in sharedPref
+        gameActivity.prefEditor.putInt(Utilities.KEY_SCORE, score);
+        gameActivity.prefEditor.apply();
         invalidate();
     }
 
@@ -607,16 +636,16 @@ public class GameView extends View {
         // show toast to let them know they won
         gameActivity.mToast.setText(R.string.str_toast_correct);
         gameActivity.mToast.show();
-        sourceRevealed = true;
+        gameActivity.model.sourceRevealed = true;
         gameActivity.showNextButton();
         invalidate();
     }
 
-    /**
-     * Returns a String representation of the dots list
-     * @return a String representation of the dots list
-     */
+    // Returns a String representation of the dots list
     public String dotsToString() {
+        if(gameActivity.model.dots == null) {
+            return "";
+        }
         String str = "";
         for(Dot d: gameActivity.model.dots) {
             str += d.toString();
@@ -653,6 +682,9 @@ public class GameView extends View {
         if(isLoading) {
             // if loading then redraw the loading dots (as squares or circles)
             invalidate();
+        } else if (gameActivity.isGameOver || gameActivity.model.dots == null) {
+            // if game is over then we do not need to do anything
+            return;
         } else {
             clearGameCanvas();
             for (Dot d : gameActivity.model.dots) {

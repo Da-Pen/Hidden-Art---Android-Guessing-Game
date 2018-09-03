@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ClickDots</string>
+    <string name="app_name">Hidden Pictures</string>
     <string name="darkThemeName">d</string>
     <string name="lightThemeName">l</string>
 
@@ -9,7 +9,6 @@
     <string name="str_next">NEXT</string>
 
     <!-- menu screen strings -->
-    <string name="str_menu_title">Click the Dots</string>
     <string name="str_menu_play">PLAY</string>
     <string name="str_menu_instructions">INSTRUCTIONS</string>
     <string name="str_menu_credits">CREDITS</string>
@@ -21,7 +20,7 @@
     <string name="str_click_to_try_again">Click to try again</string>
     <string name="str_retry_internet">TRY AGAIN</string>
 
-    <!-- instructions screen strings -->
+    <!-- goToInstructions screen strings -->
     <string name="str_back_to_menu">back to menu</string>
 
     <!-- game screen strings -->
@@ -43,7 +42,7 @@
     <string name="str_nav_toggle_theme">Switch Theme</string>
     <string name="str_nav_toggle_square_mode">Toggle Square Mode</string>
     <string name="str_nav_screenshot">Screenshot</string>
-    <string name="str_nav_resign">Give up</string>
+    <string name="str_nav_resign">Give Up</string>
 
     <!-- game > other strings -->
     <string name="str_dialog_confirm_resign">Are you sure you want to give up?</string>
@@ -56,6 +55,10 @@
         Thanks to Aaron C. for suggesting to do a side project\n
         Images from pexels.com\n
         Inspired by koalastothemax.com</string>
+    <string name="str_folder_name">ClickDots_Images</string>
+    <string name="str_toast_screenshot_fail">failed to screenshot</string>
+    <string name="str_toast_screenshot_success">Saved Image</string>
+    <string name="str_btn_clear_guess">✕</string>
 
 
 </resources>

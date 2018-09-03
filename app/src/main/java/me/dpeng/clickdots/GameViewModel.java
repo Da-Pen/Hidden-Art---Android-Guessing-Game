@@ -12,4 +12,5 @@ import java.util.ArrayList;
 public class GameViewModel extends ViewModel {
     public Bitmap bitmap;
     public ArrayList<Dot> dots;
+    public boolean sourceRevealed;
 }

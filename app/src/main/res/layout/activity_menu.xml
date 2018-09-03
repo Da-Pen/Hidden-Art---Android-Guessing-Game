@@ -35,7 +35,7 @@
         android:id="@+id/btn_instructions"
         style="@style/MenuButton"
         android:layout_height="wrap_content"
-        android:onClick="instructions"
+        android:onClick="goToInstructions"
         android:text="@string/str_menu_instructions"
         android:paddingBottom="10dp"
         android:paddingTop="10dp"

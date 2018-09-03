@@ -97,22 +97,39 @@
                 android:textColor="@color/color_search_bar_text"
                 android:textColorHint="@color/color_search_bar_hint"
                 app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_clear_guess"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintHorizontal_chainStyle="spread"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/btn_clear_guess"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="clearGuess"
+                android:paddingEnd="0dp"
+                android:paddingStart="0dp"
+                android:text="@string/str_btn_clear_guess"
+                android:textColor="@color/color_search_bar_text"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/btn_guess"
                 app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/editText"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <Button
                 android:id="@+id/btn_guess"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:onClick="guess"
                 android:text="@string/str_btn_guess"
                 android:textColor="@color/color_search_bar_text"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintStart_toEndOf="@+id/editText"
+                app:layout_constraintStart_toEndOf="@+id/btn_clear_guess"
                 app:layout_constraintTop_toTopOf="parent" />
         </android.support.constraint.ConstraintLayout>
     </android.support.constraint.ConstraintLayout>
