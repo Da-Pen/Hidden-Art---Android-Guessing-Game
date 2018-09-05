@@ -71,6 +71,14 @@ public class GameView extends View {
     // need to scale it once)
     private boolean firstMeasure = true;
 
+    private int sourceOpacity = 0;
+    // while the image is being revealed,
+    // every frame, the source image's opacity changes by SOURCE_REVEAL_RATE.
+    private static final int SOURCE_REVEAL_RATE = 4;
+
+
+
+
     private Canvas gameCanvas;
 
 
@@ -220,6 +228,7 @@ public class GameView extends View {
 
     // gets the valid guesses, loads the image into the source Bitmap, and starts the game
     public void onImageURLLoaded() {
+        sourceOpacity = 0;
         if(gameActivity.model.bitmap == null) {
             gameActivity.model.bitmap = Bitmap.createBitmap(viewDiameter, viewDiameter, Bitmap.Config.ARGB_8888);
         }
@@ -235,6 +244,7 @@ public class GameView extends View {
             // TODO add some kind of "play summary" here
             gameActivity.prefEditor.putInt(Utilities.KEY_LEVEL_NUMBER, 0);
             gameActivity.prefEditor.apply();
+            gameActivity.setLevelNumber(1);
             currLevel = 0;
         }
         imageInfo = imageOptions.get(currLevel);
@@ -295,9 +305,11 @@ public class GameView extends View {
         switch(event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN: {
                 // if the image is revealed then when they click on it, it should go to the "dots"
-                if(gameActivity.model.sourceRevealed) {
-//                    gameActivity.model.sourceRevealed = false;
-//                    invalidate();
+                if(gameActivity.isGameOver) {
+                    if(gameActivity.model.dots != null) {
+                        gameActivity.model.sourceRevealed = !gameActivity.model.sourceRevealed;
+                        invalidate();
+                    }
                     return true;
                 }
                 clicksInARow++;
@@ -318,7 +330,7 @@ public class GameView extends View {
             }
             case MotionEvent.ACTION_MOVE: {
                 // if the image is revealed then when they click on it, it should go to the "dots"
-                if(gameActivity.model.sourceRevealed) {
+                if(gameActivity.isGameOver) {
                     return true;
                 }
                 // if clicksInARow is already negative, leave it. It means that we do not want to
@@ -352,9 +364,17 @@ public class GameView extends View {
             // if loading then draw three dots to show loading
             drawLoadingDots(canvas);
 
-        } else if(gameActivity.model.sourceRevealed) {
-            // if the user won or gave up then show the source image
+        } else if(gameActivity.model.sourceRevealed && sourceOpacity == 255) {
+            // if the user won or lost then show the source image
             canvas.drawBitmap(screenSizeBmp, 0, 0, paint);
+
+        } else if(gameActivity.model.sourceRevealed) {
+            canvas.drawBitmap(gameActivity.model.bitmap, 0, 0, null);
+            paint.setAlpha(sourceOpacity);
+            canvas.drawBitmap(screenSizeBmp, 0, 0, paint);
+            sourceOpacity += SOURCE_REVEAL_RATE;
+            sourceOpacity = Math.min(sourceOpacity, 255);
+            invalidate();
 
         } else {
             // otherwise draw all the dots
@@ -447,7 +467,7 @@ public class GameView extends View {
      * @return whether or not the split was successful (if the Dot is already the minimum size
      * then it is unsuccessful)
      */
-    private boolean splitDot(Dot dot, int index) {
+    private boolean  splitDot(Dot dot, int index) {
         // only split it if there has been less than MAX_CLICKS
 
         if(dot.getDiameter() / 2 > SMALLEST_DIAMETER) {
@@ -540,7 +560,6 @@ public class GameView extends View {
             if(gameActivity.sharedPreferences.getBoolean(Utilities.KEY_IS_GAME_OVER, false)) {
                 gameActivity.isGameOver = true;
                 gameActivity.model.sourceRevealed = true;
-                gameActivity.showNextButton();
             }
         } else {
             // get the progress of the level that we saved the last time the app was open.
@@ -550,7 +569,6 @@ public class GameView extends View {
             if(gameActivity.sharedPreferences.getBoolean(Utilities.KEY_IS_GAME_OVER, false)) {
                 gameActivity.isGameOver = true;
                 gameActivity.model.sourceRevealed = true;
-                gameActivity.showNextButton();
             } else {// if there was some progress saved then load it
                 // if there was no dots (i.e they just started the new level) then create the first dot
                 if(progress.isEmpty()) {
@@ -628,11 +646,38 @@ public class GameView extends View {
 
         // save the score in sharedPref
         gameActivity.prefEditor.putInt(Utilities.KEY_SCORE, score);
+        // EDIT STATISTICS
+        // increase games played by 1
+        int gamesPlayed = 1 + gameActivity.sharedPreferences.getInt(
+                Utilities.KEY_GAMES_PLAYED, 0);
+        gameActivity.prefEditor.putInt(Utilities.KEY_GAMES_PLAYED, gamesPlayed);
         gameActivity.prefEditor.apply();
+
         invalidate();
     }
 
     private void win() {
+        // EDIT STATISTICS
+        // increase games played by 1
+        int gamesPlayed = 1 + gameActivity.sharedPreferences.getInt(
+                Utilities.KEY_GAMES_PLAYED, 0);
+        gameActivity.prefEditor.putInt(Utilities.KEY_GAMES_PLAYED, gamesPlayed);
+        // increase games won by 1
+        int gamesWon = 1 + gameActivity.sharedPreferences.getInt(
+                Utilities.KEY_GAMES_WON, 0);
+        gameActivity.prefEditor.putInt(Utilities.KEY_GAMES_WON, gamesWon);
+        // recalculate average score
+        float oldAverage = gameActivity.sharedPreferences.getFloat(Utilities.KEY_AVERAGE_SCORE, 0);
+        gameActivity.prefEditor.putFloat(Utilities.KEY_AVERAGE_SCORE,
+                (oldAverage*(gamesPlayed - 1) + score) / (float)gamesPlayed);
+        // check if their score is better than the best score and if so, store it as the best score
+        int bestScore = gameActivity.sharedPreferences.getInt(Utilities.KEY_BEST_SCORE, -1);
+        if(score < bestScore || bestScore == -1) {
+            gameActivity.prefEditor.putInt(Utilities.KEY_BEST_SCORE, score);
+        }
+
+        gameActivity.prefEditor.apply();
+
         // show toast to let them know they won
         gameActivity.mToast.setText(R.string.str_toast_correct);
         gameActivity.mToast.show();
@@ -682,8 +727,7 @@ public class GameView extends View {
         if(isLoading) {
             // if loading then redraw the loading dots (as squares or circles)
             invalidate();
-        } else if (gameActivity.isGameOver || gameActivity.model.dots == null) {
-            // if game is over then we do not need to do anything
+        } else if (gameActivity.model.dots == null) {
             return;
         } else {
             clearGameCanvas();

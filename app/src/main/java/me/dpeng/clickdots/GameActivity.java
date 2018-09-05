@@ -24,11 +24,14 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -63,6 +66,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     private ConstraintLayout guessBarLayout; // the layout for the bottom bar of the activity
     private EditText et_guess;
     private Button btn_clear_guess;
+    private boolean isXHidden = true;
     private Button btn_guess;
 
 
@@ -179,14 +183,37 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
             }
         });
         et_guess.setBackgroundColor(0); // set background transparent in order to remove underline
-        et_guess.setText(sharedPreferences.getString(Utilities.KEY_GUESSES_BAR_TEXT, ""));
+        String oldText = sharedPreferences.getString(Utilities.KEY_GUESSES_BAR_TEXT, "");
+        et_guess.setText(oldText);
+        et_guess.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if((s.length() == 0 && !isXHidden) || isGameOver) {
+                    hideX();
+                } else if (s.length() != 0 && isXHidden) {
+                    showX();
+                }
+            }
+        });
 
         btn_clear_guess = findViewById(R.id.btn_clear_guess);
         btn_guess = findViewById(R.id.btn_guess);
 
 
-        // if the game was over last time then
+        // if the game was over last time then show the next button
+        if(sharedPreferences.getBoolean(Utilities.KEY_IS_GAME_OVER, false)) {
+            showNextButton();
+        }
 
+        if(oldText.isEmpty()) {
+            hideX();
+        }
     }
 
     // convert the guess bar into the next button
@@ -271,6 +298,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         // change the gameView to the next level
         gameView.onImageURLLoaded();
         isGameOver = false;
+        hideX();
     }
 
 
@@ -409,6 +437,12 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
 
     // called when the user resigns (from the right menu)
     private void resign() {
+        // if the game is already over then there is no need to resign
+        if(isGameOver) {
+            mToast.setText(R.string.str_toast_give_up_when_finished);
+            mToast.show();
+            return;
+        }
         // reveal the source image
         // possibly call the function called when they lose
         FragmentTransaction ft = getFragmentManager().beginTransaction();
@@ -511,6 +545,31 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         }
     }
 
+    // hides the "X" button used to clear text
+    private void hideX() {
+        btn_clear_guess.setEnabled(false);
+        btn_clear_guess.setText("");
+        // remove width if X
+        ViewGroup.LayoutParams lp = btn_clear_guess.getLayoutParams();
+        lp.width = 1;
+        btn_clear_guess.setLayoutParams(lp);
+        isXHidden = true;
+    }
+
+    // shows the "X" button used to clear text
+    private void showX() {
+        btn_clear_guess.setEnabled(true);
+        btn_clear_guess.setText(R.string.str_btn_clear_guess);
+        // add width if X
+        ViewGroup.LayoutParams lp = btn_clear_guess.getLayoutParams();
+        lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+        btn_clear_guess.setLayoutParams(lp);
+        isXHidden = false;
+    }
+
+    public void setLevelNumber(int x){
+        tv_levelNumber.setText(String.format(res.getString(R.string.str_nav_level), x));
+    }
 
     // hides the keyboard
     public static void hideSoftKeyboard(Activity activity) {

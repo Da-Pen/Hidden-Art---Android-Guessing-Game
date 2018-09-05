@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Hidden Pictures</string>
+    <string name="app_name">Hidden Art</string>
     <string name="darkThemeName">d</string>
     <string name="lightThemeName">l</string>
 
@@ -11,17 +11,15 @@
     <!-- menu screen strings -->
     <string name="str_menu_play">PLAY</string>
     <string name="str_menu_instructions">INSTRUCTIONS</string>
-    <string name="str_menu_credits">CREDITS</string>
-    <string name="str_square_mode_on">Square Mode is ON</string>
-    <string name="str_square_mode_off">Square Mode is OFF</string>
+    <string name="str_toast_square_mode_on">Square Mode is ON</string>
+    <string name="str_toast_square_mode_off">Square Mode is OFF</string>
 
     <!-- no internet screen strings -->
     <string name="str_no_internet">No internet connection!</string>
     <string name="str_click_to_try_again">Click to try again</string>
     <string name="str_retry_internet">TRY AGAIN</string>
 
-    <!-- goToInstructions screen strings -->
-    <string name="str_back_to_menu">back to menu</string>
+    <!-- instructions screen strings -->
 
     <!-- game screen strings -->
     <!-- game > toast strings -->
@@ -46,11 +44,15 @@
 
     <!-- game > other strings -->
     <string name="str_dialog_confirm_resign">Are you sure you want to give up?</string>
-    <string name="str_search_bar_hint">Enter your guess</string>
+    <string name="str_search_bar_hint">The hidden image is...</string>
     <string name="str_could_not_connect_to_dropbox">Could not connect to Dropbox.</string>
 
 
     <!-- credits screen strings -->
+    <string name="str_stats_left">Games Played\n
+        Games Won\n
+        Average Score\n
+        Best Score</string>
     <string name="str_credits_text">Created by Daniel P.\n
         Thanks to Aaron C. for suggesting to do a side project\n
         Images from pexels.com\n
@@ -59,6 +61,8 @@
     <string name="str_toast_screenshot_fail">failed to screenshot</string>
     <string name="str_toast_screenshot_success">Saved Image</string>
     <string name="str_btn_clear_guess">✕</string>
+    <string name="str_toast_give_up_when_finished">You already finished the game!</string>
+    <string name="str_statistics">Statistics</string>
 
 
 </resources>

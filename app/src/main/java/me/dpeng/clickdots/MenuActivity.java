@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.transition.Fade;
 import android.transition.Scene;
@@ -109,7 +108,7 @@ public class MenuActivity extends AppCompatActivity {
 
         // let the user know that vector_square mode is on or off via Toast
 
-        mToast.setText(Utilities.isSquareMode ? getResources().getString(R.string.str_square_mode_on):getResources().getString(R.string.str_square_mode_off));
+        mToast.setText(Utilities.isSquareMode ? getResources().getString(R.string.str_toast_square_mode_on):getResources().getString(R.string.str_toast_square_mode_off));
         mToast.show();
 
         // alter the button image

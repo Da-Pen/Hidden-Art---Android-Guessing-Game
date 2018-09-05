@@ -28,12 +28,19 @@ public abstract class Utilities {
 
     // info from the last level
     public static final String KEY_LEVEL_NUMBER = "ln";
-    //
+    // a string representing the dots in the game
     public static final String KEY_LEVEL_PROGRESS = "lp";
     public static final String KEY_IS_GAME_OVER = "go";
     public static final String KEY_GUESSES_LEFT = "gl";
     public static final String KEY_GUESSES_BAR_TEXT = "gt";
     public static final String KEY_SCORE = "s";
+
+    // statistics
+    public static final String KEY_AVERAGE_SCORE = "AS";
+    public static final String KEY_GAMES_WON = "GW";
+    public static final String KEY_GAMES_PLAYED = "GP";
+    public static final String KEY_BEST_SCORE = "BS";
+
 
     // whether or not the info about the last game is stored in sharedPref
     // (it could also be stored in a ViewModel)

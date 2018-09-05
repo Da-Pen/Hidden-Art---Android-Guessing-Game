@@ -7,14 +7,17 @@
     android:layout_height="match_parent">
 
 
-    <Button
+    <ImageButton
         android:id="@+id/btn_back"
         android:onClick="backToMenu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/str_back_to_menu"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:padding="12dp"
+        android:background="@null"
+        app:srcCompat="@drawable/vector_back"
+        android:tint="?android:colorForeground"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
