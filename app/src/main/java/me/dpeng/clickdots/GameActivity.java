@@ -583,4 +583,5 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
             e.printStackTrace();
         }
     }
+
 }

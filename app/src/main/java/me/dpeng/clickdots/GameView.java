@@ -58,12 +58,13 @@ public class GameView extends View {
     // the source image except scaled down to 1/RESOLUTION_RATIOth the size of screenSizeBmp. This
     // is used to calculate average colors.
     private Bitmap srcBmp;
-    // private Bitmap loadingBmp;
+    private int srcBmpDiameter;
+
     // height of this view, in px
     public int viewDiameter;
     // since the source image is too large to calculate the average color of, we instead load
     // a compressed version of it (1/RESOLUTION_RATIO of the size) and use that to do calculations
-    public final int RESOLUTION_RATIO = 10;
+    private int RESOLUTION_RATIO = 10;
     // URL of the source image
     private String imageURL;
     // boolean used to check if it is the first time this view has been measured.
@@ -75,7 +76,6 @@ public class GameView extends View {
     // while the image is being revealed,
     // every frame, the source image's opacity changes by SOURCE_REVEAL_RATE.
     private static final int SOURCE_REVEAL_RATE = 4;
-
 
 
 
@@ -93,7 +93,7 @@ public class GameView extends View {
     // the smallest diameter for a dot.
     // SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / 2^MAX_CLICKS)));
     // It is calculated when the game is initialised.
-    private int SMALLEST_DIAMETER;
+    // private int SMALLEST_DIAMETER;
     // whether or not the user has gameActivity.model.sourceRevealed the source image
     private int lastTouchX;
     private int lastTouchY;
@@ -213,8 +213,13 @@ public class GameView extends View {
         DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
         viewDiameter = dm.widthPixels - sideMargin*2;
 
+        // possibly recalculate RESOLUTION_RATIO to make sure there are at least 2 pixels sampled per dot.
+        RESOLUTION_RATIO = Math.min(RESOLUTION_RATIO,
+                (int)Math.floor( viewDiameter/ (2*Math.pow(2, MAX_CLICKS)) ));
+
+
         // calculate the smallest diameter for a Dot before it is unsplittable
-        SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / Math.pow(2, MAX_CLICKS)));
+        // SMALLEST_DIAMETER = Math.max(3, (int)Math.floor(viewDiameter / Math.pow(2, MAX_CLICKS)));
 
 
         if(gameActivity.model.bitmap == null) {
@@ -269,6 +274,7 @@ public class GameView extends View {
                 // once the image is ready then start the game.
                 srcBmp = Bitmap.createScaledBitmap(resource, viewDiameter /RESOLUTION_RATIO,
                         viewDiameter /RESOLUTION_RATIO, false);
+                srcBmpDiameter = viewDiameter/RESOLUTION_RATIO;
                 screenSizeBmp = resource;
                 isLoading = false;
                 onImageLoaded();
@@ -385,16 +391,18 @@ public class GameView extends View {
     }
 
     private void drawLoadingDots(Canvas canvas) {
-        int radius = 30; // radius of loading dots
+        // the loading dots are the same size as a Dot that is resulted
+        // by splitting the first dot 3 times.
+        int radius = calculateDiameter(3)/2;
         int color = Color.GRAY;
         int y = viewDiameter /2 - radius;
         int x1 = viewDiameter /4 - radius;
         int x2 = viewDiameter /2 - radius;
         int x3 = (viewDiameter *3)/4 - radius;
 
-        Dot d1 = new Dot(x1, y, radius*2, color);
-        Dot d2 = new Dot(x2, y, radius*2, color);
-        Dot d3 = new Dot(x3, y, radius*2, color);
+        Dot d1 = new Dot(x1, y, radius, color, 0); // here the last variable doesn't matter
+        Dot d2 = new Dot(x2, y, radius, color, 0);
+        Dot d3 = new Dot(x3, y, radius, color, 0);
         d1.draw(canvas, paint, false);
         d2.draw(canvas, paint, false);
         d3.draw(canvas, paint, false);
@@ -430,18 +438,19 @@ public class GameView extends View {
 
         // if the area is large, then we do not have to actually look at every single pixel.
         // instead we look at every divFactor(th) pixel. For example, if divFactor=10 then we
-        // will look at every tenth pixel. This helps to speed up this function.
+        // will look at every 10th pixel. This helps to speed up this function.
         // look at approx 5*5 pixels for large circles to determine average color
         int divFactor = Math.round(((float)(endX - startX)) / ((float)RESOLUTION_RATIO)/((float)5.0));
         if(divFactor == 0) divFactor = 1; // avoid infinite loop
         int totalPixels = 0;
-        startX /= RESOLUTION_RATIO;
-        startY /= RESOLUTION_RATIO;
-        endX /= RESOLUTION_RATIO;
-        endY /= RESOLUTION_RATIO;
+        startX = Math.max(startX/RESOLUTION_RATIO, 0);
+        startY = Math.max(startY/RESOLUTION_RATIO, 0);
+        endX = Math.min(endX/RESOLUTION_RATIO, srcBmpDiameter);
+        endY = Math.min(endY/RESOLUTION_RATIO, srcBmpDiameter);;
         int sumR = 0;
         int sumG = 0;
         int sumB = 0;
+
         for(int x = startX; x < endX; x += divFactor) {
             for(int y = startY; y < endY; y += divFactor) {
                 totalPixels++;
@@ -449,6 +458,7 @@ public class GameView extends View {
                 sumR += Color.red(pix);
                 sumG += Color.green(pix);
                 sumB += Color.blue(pix);
+
             }
         }
 
@@ -468,9 +478,8 @@ public class GameView extends View {
      * then it is unsuccessful)
      */
     private boolean  splitDot(Dot dot, int index) {
-        // only split it if there has been less than MAX_CLICKS
-
-        if(dot.getDiameter() / 2 > SMALLEST_DIAMETER) {
+        // only split it if there has been less than MAX_CLICKS splits
+        if(dot.getSplitLevel() < MAX_CLICKS) {
             if(!gameActivity.isGameOver) {
                 // if the game is already over, the user can continue to click without
                 // increasing their score
@@ -479,28 +488,31 @@ public class GameView extends View {
             }
             // REMOVE THE OLD DOT
             gameActivity.model.dots.remove(index);
+
+            dot.draw(gameCanvas, clearPaint, false);
             int size = gameActivity.model.dots.size();
             // SPLIT THE DOT INTO FOUR DOTS
             // Top left dot
-            int rad = (int) Math.round(((float) dot.getDiameter()) / 2.0);
-            int c = getAvgColor(dot.getX(), dot.getY(), dot.getX() + rad, dot.getY() + rad);
-            gameActivity.model.dots.add(new Dot(dot.getX(), dot.getY(), rad, c));
-            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
+            int splitLevel = 1 + dot.getSplitLevel();
+            int diameter = calculateDiameter(splitLevel);
+            int c = getAvgColor(dot.getX(), dot.getY(), dot.getX() + diameter, dot.getY() + diameter);
+            gameActivity.model.dots.add(new Dot(dot.getX(), dot.getY(), diameter, c, splitLevel));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, false);
             size++;
             // Top right dot
-            c = getAvgColor(dot.getX() + rad, dot.getY(), dot.getX() + dot.getDiameter(), dot.getY() + rad);
-            gameActivity.model.dots.add(new Dot(dot.getX() + rad, dot.getY(), rad, c));
-            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
+            c = getAvgColor(dot.getX() + diameter, dot.getY(), dot.getX() + dot.getDiameter(), dot.getY() + diameter);
+            gameActivity.model.dots.add(new Dot(dot.getX() + diameter, dot.getY(), diameter, c, splitLevel));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, false);
             size++;
             // Bottom left dot
-            c = getAvgColor(dot.getX(), dot.getY() + rad, dot.getX() + rad, dot.getY() + dot.getDiameter());
-            gameActivity.model.dots.add(new Dot(dot.getX(), dot.getY() + rad, rad, c));
-            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
+            c = getAvgColor(dot.getX(), dot.getY() + diameter, dot.getX() + diameter, dot.getY() + dot.getDiameter());
+            gameActivity.model.dots.add(new Dot(dot.getX(), dot.getY() + diameter, diameter, c, splitLevel));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, false);
             // Bottom right dot
             size++;
-            c = getAvgColor(dot.getX() + rad, dot.getY() + rad, dot.getX() + dot.getDiameter(), dot.getY() + dot.getDiameter());
-            gameActivity.model.dots.add(new Dot(dot.getX() + rad, dot.getY() + rad, rad, c));
-            gameActivity.model.dots.get(size).draw(gameCanvas, paint, true);
+            c = getAvgColor(dot.getX() + diameter, dot.getY() + diameter, dot.getX() + dot.getDiameter(), dot.getY() + dot.getDiameter());
+            gameActivity.model.dots.add(new Dot(dot.getX() + diameter, dot.getY() + diameter, diameter, c, splitLevel));
+            gameActivity.model.dots.get(size).draw(gameCanvas, paint, false);
             return true;
 
         }
@@ -575,7 +587,7 @@ public class GameView extends View {
                     gameActivity.model.dots = new ArrayList<>();
                     int avgColor = getAvgColor(0, 0, viewDiameter, viewDiameter);
                     // add first dot
-                    gameActivity.model.dots.add(new Dot(0, 0, viewDiameter, avgColor));
+                    gameActivity.model.dots.add(new Dot(0, 0, viewDiameter, avgColor, 0));
                     gameActivity.model.dots.get(0).draw(gameCanvas, paint, true);
 //                    // since the new game started, the game is not "over" anymore
 //                    gameActivity.prefEditor.putBoolean(Utilities.KEY_IS_GAME_OVER, false);
@@ -709,11 +721,14 @@ public class GameView extends View {
         String[] dotsStrList = s.split(";");
         for(String dotsStr: dotsStrList) {
             String[] properties = dotsStr.split(",");
+            int splitLevel = Integer.parseInt(properties[3]);
             gameActivity.model.dots.add(new Dot(
                     Integer.parseInt(properties[0]), // x
                     Integer.parseInt(properties[1]), // y
-                    Integer.parseInt(properties[2]), // diameter
-                    Integer.parseInt(properties[3]))); // color
+                    calculateDiameter(splitLevel),   // diameter
+                    Integer.parseInt(properties[2]), // color
+                    splitLevel)); // split level
+
         }
     }
 
@@ -736,5 +751,9 @@ public class GameView extends View {
             }
         }
 
+    }
+
+    private int calculateDiameter(int splitLevel) {
+        return (int)Math.ceil(viewDiameter/Math.pow(2, splitLevel));
     }
 }

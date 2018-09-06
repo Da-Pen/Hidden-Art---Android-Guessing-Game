@@ -22,5 +22,4 @@ ClickDots is a game where the user's goal is to guess the content of a hidden im
   <img src="https://github.com/Da-Pen/Click_Dots/blob/master/images/README_images/gallery_6.png?raw=true" width="300" />
   <img src="https://github.com/Da-Pen/Click_Dots/blob/master/images/README_images/gallery_7.png?raw=true" width="300" />
   <img src="https://github.com/Da-Pen/Click_Dots/blob/master/images/README_images/gallery_8.png?raw=true" width="300" />
-  <img src="https://github.com/Da-Pen/Click_Dots/blob/master/images/README_images/gallery_9.png?raw=true" width="300" />
 </p>

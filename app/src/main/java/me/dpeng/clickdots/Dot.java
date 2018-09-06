@@ -18,13 +18,15 @@ public class Dot implements Comparable<Dot>{
     private int diameter;
     private int radius; // not necessary (since we have diameter) but used to draw things faster
     private int color;
+    private int splitLevel;
 
-    public Dot(int x, int y, int diameter, int color) {
+    public Dot(int x, int y, int diameter, int color, int splitLevel) {
         this.x = x;
         this.y = y;
         this.diameter = diameter;
-        this.radius = diameter/2;
+        this.radius = (int)Math.ceil(((float)diameter)/2.0);
         this.color = color;
+        this.splitLevel = splitLevel;
     }
 
     public void draw(Canvas canvas, Paint paint, boolean clearBackGround) {
@@ -77,6 +79,14 @@ public class Dot implements Comparable<Dot>{
         this.color = color;
     }
 
+    public int getSplitLevel() {
+        return splitLevel;
+    }
+
+    public void setSplitLevel(int splitLevel) {
+        this.splitLevel = splitLevel;
+    }
+
     /**
      * Returns true if position x, y is within the bounding box of this Dot, and false otherwise
      * @param touchX
@@ -102,7 +112,7 @@ public class Dot implements Comparable<Dot>{
 
     @Override
     public String toString() {
-        return x + "," + y + "," + diameter + "," + color + ";";
+        return x + "," + y + "," + color + "," + splitLevel + ";";
     }
 }
 
