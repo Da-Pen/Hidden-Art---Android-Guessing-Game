@@ -82,7 +82,15 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
     private View headerView;
     private TextView tv_levelNumber;
 
+    private boolean shouldSaveProgress = true;
+
     public Toast mToast;
+
+    @Override
+    protected void onStop() {
+        if(shouldSaveProgress) saveProgressInSharedPref();
+        super.onStop();
+    }
 
     /**
      * Sets up the layout and instantiates the GameView.
@@ -350,6 +358,11 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
                 prefEditor.putBoolean(Utilities.KEY_IS_GAME_OVER, isGameOver);
                 prefEditor.apply();
 
+                // since the progress is saved in the ViewModel we do not need to save it
+                // in SharedPreference. so set shouldSaveProgress to false so onStop doesn't save
+                // in SharedPreferences.
+                shouldSaveProgress = false;
+
                 // recreate the activity
                 recreate();
                 break;
@@ -378,17 +391,6 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
      * @param view
      */
     public void backToMenu(View view) {
-        // if the game has not been loaded yet then do nothing
-        if(gameView != null) {
-            // if the game has started and not finished then we save the current progress
-//            if (!gameView.isLoading) {
-                saveProgressInSharedPref();
-//            } else {
-//                // otherwise reset the preferences
-//                resetSharedPreferences(isGameOver);
-//            }
-
-        }
 
         finish();
         Intent intent = new Intent(this, MenuActivity.class);
@@ -474,7 +476,7 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         }
 
         String root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
-        File myDir = new File(root + "/ClickDots/");
+        File myDir = new File(root + "/" + getResources().getString(R.string.str_folder_name) + "/");
         myDir.mkdirs();
 
         String fname = "Image-0.png";
@@ -537,10 +539,11 @@ public class GameActivity extends AppCompatActivity implements ConfirmResignDial
         if(gameView != null) {
             prefEditor.putInt(Utilities.KEY_SCORE, gameView.score);
             prefEditor.putString(Utilities.KEY_GUESSES_BAR_TEXT, et_guess.getText().toString());
+            if(!isGameOver) {
+                prefEditor.putInt(Utilities.KEY_GUESSES_LEFT, gameView.guessesLeft);
+                prefEditor.putString(Utilities.KEY_LEVEL_PROGRESS, gameView.dotsToString());
+            }
             prefEditor.putBoolean(Utilities.KEY_IS_GAME_OVER, isGameOver);
-            prefEditor.putInt(Utilities.KEY_GUESSES_LEFT, gameView.guessesLeft);
-            prefEditor.putString(Utilities.KEY_LEVEL_PROGRESS, gameView.dotsToString());
-            prefEditor.putBoolean(Utilities.KEY_IS_INFO_IN_SHARED_PREF, true);
             prefEditor.apply();
         }
     }

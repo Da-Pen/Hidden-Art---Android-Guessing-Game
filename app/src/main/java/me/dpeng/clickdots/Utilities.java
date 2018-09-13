@@ -42,11 +42,6 @@ public abstract class Utilities {
     public static final String KEY_BEST_SCORE = "BS";
 
 
-    // whether or not the info about the last game is stored in sharedPref
-    // (it could also be stored in a ViewModel)
-    public static final String KEY_IS_INFO_IN_SHARED_PREF = "i";
-
-
 
 
     public static boolean isNetworkAvailable(Context c) {

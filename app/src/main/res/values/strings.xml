@@ -57,7 +57,7 @@
         Thanks to Aaron C. for suggesting to do a side project\n
         Images from pexels.com\n
         Inspired by koalastothemax.com</string>
-    <string name="str_folder_name">ClickDots_Images</string>
+    <string name="str_folder_name">Hidden_Art_Images</string>
     <string name="str_toast_screenshot_fail">failed to screenshot</string>
     <string name="str_toast_screenshot_success">Saved Image</string>
     <string name="str_btn_clear_guess">✕</string>

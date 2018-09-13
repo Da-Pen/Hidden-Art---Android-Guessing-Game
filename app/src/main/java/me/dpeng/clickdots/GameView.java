@@ -181,6 +181,7 @@ public class GameView extends View {
                         });
 
                     } catch (Exception e) {
+                        e.printStackTrace();
                         // if the connection failed then let the user know
                         gameActivity.runOnUiThread(new Runnable() {
                             @Override
@@ -192,8 +193,7 @@ public class GameView extends View {
                     }
 
                 } catch (Exception e) {
-                    // if the connection failed then let the user know
-                    connectionFailed = true;
+                    e.printStackTrace();
                     gameActivity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -244,7 +244,7 @@ public class GameView extends View {
         // load the image for this current level
         int currLevel = gameActivity.sharedPreferences.getInt(Utilities.KEY_LEVEL_NUMBER, 0);
         score = gameActivity.sharedPreferences.getInt(Utilities.KEY_SCORE, 0);
-        if(currLevel >= imageOptions.size()) {
+        if(currLevel >= imageOptions.size() || currLevel < 0) {
             // reset the level to 0 for now if they have completed all of them
             // TODO add some kind of "play summary" here
             gameActivity.prefEditor.putInt(Utilities.KEY_LEVEL_NUMBER, 0);
@@ -392,17 +392,17 @@ public class GameView extends View {
 
     private void drawLoadingDots(Canvas canvas) {
         // the loading dots are the same size as a Dot that is resulted
-        // by splitting the first dot 3 times.
-        int radius = calculateDiameter(3)/2;
+        // by splitting the first dot 4 times.
+        int radius = calculateDiameter(4)/2;
         int color = Color.GRAY;
         int y = viewDiameter /2 - radius;
         int x1 = viewDiameter /4 - radius;
         int x2 = viewDiameter /2 - radius;
         int x3 = (viewDiameter *3)/4 - radius;
 
-        Dot d1 = new Dot(x1, y, radius, color, 0); // here the last variable doesn't matter
-        Dot d2 = new Dot(x2, y, radius, color, 0);
-        Dot d3 = new Dot(x3, y, radius, color, 0);
+        Dot d1 = new Dot(x1, y, radius*2, color, 0); // here the last variable doesn't matter
+        Dot d2 = new Dot(x2, y, radius*2, color, 0);
+        Dot d3 = new Dot(x3, y, radius*2, color, 0);
         d1.draw(canvas, paint, false);
         d2.draw(canvas, paint, false);
         d3.draw(canvas, paint, false);

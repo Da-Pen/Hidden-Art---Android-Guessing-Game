@@ -1,7 +1,7 @@
-# ClickDots
+# Hidden Art
 ##### An Android game inspired by koalastothemax.com
 
-ClickDots is a game where the user's goal is to guess the content of a hidden image with as little information as possible.
+Hidden Art is a game where the user's goal is to guess the content of a hidden image with as little information as possible.
 
 ## Instructions
 <p float="left">
