@@ -1,7 +1,7 @@
 # Hidden Art
-##### An Android game inspired by koalastothemax.com
+##### An image-based Android game
 
-Hidden Art is a game where the user's goal is to guess the content of a hidden image with as little information as possible.
+Hidden Art is a game where the user's goal is to guess the content of a hidden image with as little information as possible. [View on Google Play](https://play.google.com/store/apps/details?id=me.dpeng.clickdots)
 
 ## Instructions
 <p float="left">
